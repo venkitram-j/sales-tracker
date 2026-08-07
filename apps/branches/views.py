@@ -24,7 +24,7 @@ class BranchListView(CrudPermissionMixin, ListView):
         qs = Branch.objects.all()
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q) | Q(city__icontains=q))
+            qs = qs.filter(Q(name__icontains=q))
         return qs.order_by("name")
 
     def get_context_data(self, **kwargs):
@@ -63,21 +63,11 @@ class BranchExcelUploadView(ExcelUploadView):
     success_url = reverse_lazy("branches:list")
     entity_label = "branches"
     upload_title = "Bulk Upload Branches"
-    expected_columns = ["name", "code", "city", "state", "address"]
+    expected_columns = ["branch"]
 
     def process_row(self, row_number, row):
-        name = (row.get("name") or "").strip()
-        code = (row.get("code") or "").strip()
-        if not name or not code:
-            raise ValueError("'name' and 'code' are required.")
+        branch_name = (row.get("branch") or "").strip()
+        if not branch_name:
+            raise ValueError("'branch' is required.")
 
-        Branch.objects.update_or_create(
-            code=code,
-            defaults={
-                "name": name,
-                "city": (row.get("city") or "").strip(),
-                "state": (row.get("state") or "").strip(),
-                "address": (row.get("address") or "").strip(),
-                "is_active": True,
-            },
-        )
+        Branch.objects.update_or_create(name=branch_name)

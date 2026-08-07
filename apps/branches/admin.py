@@ -17,8 +17,8 @@ def mark_inactive(modeladmin, request, queryset):
 
 @admin.register(Branch)
 class BranchAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "city", "state", "is_active", "updated_at")
-    list_filter = ("is_active", "state")
-    search_fields = ("name", "code", "city", "state")
+    list_display = ("name", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("name",)
     ordering = ("name",)
     actions = [mark_active, mark_inactive]

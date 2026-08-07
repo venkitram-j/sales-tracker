@@ -15,7 +15,7 @@
     <div class="card-header bg-white">
         <form method="get" class="row g-2">
             <div class="col-auto flex-grow-1">
-                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name, code or city...">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name...">
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
@@ -26,15 +26,12 @@
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
                 <thead>
-                    <tr><th>Name</th><th>Code</th><th>City</th><th>State</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    <tr><th>Name</th><th>Status</th><th class="text-end">Actions</th></tr>
                 </thead>
                 <tbody>
                 {% for branch in branches %}
                     <tr>
                         <td>{{ branch.name }}</td>
-                        <td>{{ branch.code }}</td>
-                        <td>{{ branch.city|default:"—" }}</td>
-                        <td>{{ branch.state|default:"—" }}</td>
                         <td>
                             {% if branch.is_active %}<span class="badge text-bg-success">Active</span>
                             {% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}

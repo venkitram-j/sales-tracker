@@ -17,23 +17,6 @@
                             {{ form.name }}
                             {% for error in form.name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Code</label>
-                            {{ form.code }}
-                            {% for error in form.code.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">City</label>
-                            {{ form.city }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">State</label>
-                            {{ form.state }}
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Address</label>
-                            {{ form.address }}
-                        </div>
                         <div class="col-12 form-check">
                             {{ form.is_active }}
                             <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active</label>

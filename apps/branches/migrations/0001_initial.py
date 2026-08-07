@@ -19,10 +19,6 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True, help_text='Inactive records are hidden from normal operation.')),
                 ('name', models.CharField(db_index=True, max_length=255, unique=True)),
-                ('code', models.CharField(db_index=True, max_length=32, unique=True, verbose_name='Branch Code')),
-                ('city', models.CharField(blank=True, max_length=120)),
-                ('state', models.CharField(blank=True, max_length=120)),
-                ('address', models.TextField(blank=True)),
             ],
             options={
                 'verbose_name_plural': 'Branches',
