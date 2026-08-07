@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Admin - {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">{% if object %}Edit Admin{% else %}Add Admin{% endif %}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">User accounts are created via the Django admin panel. Select an existing user below to assign branch-management responsibilities.</p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">User</label>
+                            {{ form.user }}
+                            {% for error in form.user.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            {{ form.phone }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Branches Managed</label>
+                            {{ form.branches }}
+                            <div class="form-text">Hold Ctrl/Cmd to select multiple branches.</div>
+                        </div>
+                        <div class="col-12 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active</label>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'store_admins:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" data-loading-text="Saving...">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

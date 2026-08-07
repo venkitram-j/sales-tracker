@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Branch-wise Sales Report - {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0">Branch-wise Sales Report</h4>
+    <a href="{% url 'salesdata:list' %}" class="btn btn-outline-secondary"><i class="bi bi-list-ul me-1"></i>Raw Records</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        {% include "salesdata/_filters.html" %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h6 class="mb-0">Totals by Branch &amp; Product</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle" id="branchWiseTable">
+                <thead>
+                    <tr>
+                        <th>Branch</th><th>Product</th><th>SKU</th><th>Department</th>
+                        <th class="text-end">Transactions</th><th class="text-end">Total Qty</th>
+                        <th class="text-end">Total Value</th><th class="text-end">Total Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in summary_rows %}
+                    <tr>
+                        <td>{{ row.branch__name }}</td>
+                        <td>{{ row.product__name }}</td>
+                        <td>{{ row.product__sku }}</td>
+                        <td>{{ row.department__name }}</td>
+                        <td class="text-end">{{ row.transaction_count }}</td>
+                        <td class="text-end">{{ row.total_quantity }}</td>
+                        <td class="text-end">{{ row.total_value|floatformat:2 }}</td>
+                        <td class="text-end">{{ row.total_stock }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">No sales data for the selected filters.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

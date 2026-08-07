@@ -1,0 +1,62 @@
+{% load static %}
+<aside class="app-sidebar" id="appSidebar">
+    <nav class="nav flex-column p-3">
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}"
+           href="{% url 'dashboard:home' %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+
+        {% if perms.products.view_product %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'products' %}active{% endif %}"
+           href="{% url 'products:list' %}">
+            <i class="bi bi-box-seam"></i> Products
+        </a>
+        {% endif %}
+
+        {% if perms.departments.view_department %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'departments' %}active{% endif %}"
+           href="{% url 'departments:list' %}">
+            <i class="bi bi-diagram-2"></i> Departments
+        </a>
+        {% endif %}
+
+        {% if perms.branches.view_branch %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'branches' %}active{% endif %}"
+           href="{% url 'branches:list' %}">
+            <i class="bi bi-shop"></i> Branches
+        </a>
+        {% endif %}
+
+        {% if perms.store_admins.view_storeadmin %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'store_admins' %}active{% endif %}"
+           href="{% url 'store_admins:list' %}">
+            <i class="bi bi-person-badge"></i> Admins
+        </a>
+        {% endif %}
+
+        {% if perms.buyers.view_buyer %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'buyers' %}active{% endif %}"
+           href="{% url 'buyers:list' %}">
+            <i class="bi bi-cart-check"></i> Buyers
+        </a>
+        {% endif %}
+
+        {% if perms.salesdata.view_salesdata %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'salesdata' %}active{% endif %}"
+           href="{% url 'salesdata:list' %}">
+            <i class="bi bi-receipt"></i> Sales Data
+        </a>
+        <a class="nav-link sidebar-link ps-4 small {% if request.resolver_match.url_name == 'branch_wise' %}active{% endif %}"
+           href="{% url 'salesdata:branch_wise' %}">
+            <i class="bi bi-diagram-3"></i> Branch-wise Report
+        </a>
+        {% endif %}
+
+        {% if user.is_staff %}
+        <hr class="text-white-50">
+        <a class="nav-link sidebar-link" href="{% url 'admin:index' %}" target="_blank" rel="noopener">
+            <i class="bi bi-people"></i> Manage Users <i class="bi bi-box-arrow-up-right small"></i>
+        </a>
+        {% endif %}
+    </nav>
+</aside>

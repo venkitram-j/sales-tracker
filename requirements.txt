@@ -1,0 +1,20 @@
+# Core framework
+Django>=5.2,<5.3
+
+# Excel import/export
+openpyxl>=3.1,<4.0
+
+# Environment-based configuration (12-factor)
+python-decouple>=3.8,<4.0
+
+# Static file serving in production (no separate nginx/CDN required)
+whitenoise>=6.12,<7.0
+
+# Production WSGI server
+gunicorn>=26.0,<27.0
+
+# Bootstrap-friendly form widget rendering helpers
+django-widget-tweaks>=1.5,<2.0
+
+# PostgreSQL driver for production (binary wheel, no build toolchain needed)
+psycopg[binary]>=3.2,<4.0

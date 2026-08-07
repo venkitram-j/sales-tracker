@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Departments - {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0">Departments</h4>
+    <div class="d-flex gap-2">
+        {% if perms.departments.add_department %}
+        <a href="{% url 'departments:upload' %}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-arrow-up me-1"></i>Excel Upload</a>
+        <a href="{% url 'departments:add' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Department</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <form method="get" class="row g-2">
+            <div class="col-auto flex-grow-1">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name or code...">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr><th>Name</th><th>Code</th><th>Description</th><th>Status</th><th class="text-end">Actions</th></tr>
+                </thead>
+                <tbody>
+                {% for department in departments %}
+                    <tr>
+                        <td>{{ department.name }}</td>
+                        <td>{{ department.code }}</td>
+                        <td>{{ department.description|default:"—"|truncatechars:60 }}</td>
+                        <td>
+                            {% if department.is_active %}<span class="badge text-bg-success">Active</span>
+                            {% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if perms.departments.change_department %}
+                            <a href="{% url 'departments:edit' department.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            {% endif %}
+                            {% if perms.departments.delete_department %}
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    data-delete-url="{% url 'departments:delete' department.pk %}"
+                                    data-item-name="{{ department.name }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No departments found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include "partials/pagination.html" %}
+</div>
+
+{% include "partials/delete_modal.html" %}
+{% endblock %}
