@@ -24,7 +24,7 @@ class DepartmentListView(CrudPermissionMixin, ListView):
         qs = Department.objects.all()
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
+            qs = qs.filter(Q(name__icontains=q))
         return qs.order_by("name")
 
     def get_context_data(self, **kwargs):
@@ -67,15 +67,7 @@ class DepartmentExcelUploadView(ExcelUploadView):
 
     def process_row(self, row_number, row):
         name = (row.get("name") or "").strip()
-        code = (row.get("code") or "").strip()
-        if not name or not code:
-            raise ValueError("'name' and 'code' are required.")
+        if not name:
+            raise ValueError("'name' is required.")
 
-        Department.objects.update_or_create(
-            code=code,
-            defaults={
-                "name": name,
-                "description": (row.get("description") or "").strip(),
-                "is_active": True,
-            },
-        )
+        Department.objects.get_or_create(name=name)

@@ -26,14 +26,12 @@
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
                 <thead>
-                    <tr><th>Name</th><th>Code</th><th>Description</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    <tr><th>Name</th><th>Status</th><th class="text-end">Actions</th></tr>
                 </thead>
                 <tbody>
                 {% for department in departments %}
                     <tr>
                         <td>{{ department.name }}</td>
-                        <td>{{ department.code }}</td>
-                        <td>{{ department.description|default:"—"|truncatechars:60 }}</td>
                         <td>
                             {% if department.is_active %}<span class="badge text-bg-success">Active</span>
                             {% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}

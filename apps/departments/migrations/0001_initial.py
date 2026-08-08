@@ -19,8 +19,6 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True, help_text='Inactive records are hidden from normal operation.')),
                 ('name', models.CharField(db_index=True, max_length=255, unique=True)),
-                ('code', models.CharField(db_index=True, max_length=32, unique=True, verbose_name='Department Code')),
-                ('description', models.TextField(blank=True)),
             ],
             options={
                 'ordering': ['name'],

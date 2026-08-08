@@ -66,8 +66,8 @@ class BranchExcelUploadView(ExcelUploadView):
     expected_columns = ["branch"]
 
     def process_row(self, row_number, row):
-        branch_name = (row.get("branch") or "").strip()
-        if not branch_name:
+        name = (row.get("branch") or "").strip()
+        if not name:
             raise ValueError("'branch' is required.")
 
-        Branch.objects.update_or_create(name=branch_name)
+        Branch.objects.get_or_create(name=name)
