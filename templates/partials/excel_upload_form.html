@@ -22,7 +22,7 @@
                 <div class="alert alert-info small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>{{ upload_help_text }}</div>
                 {% endif %}
 
-                {% with layout_has_errors=form.header_row.errors|add:form.data_start_row.errors|add:form.start_column.errors %}
+                {% with layout_has_errors=form.header_row.errors|add:form.start_column.errors %}
                 <form method="post" enctype="multipart/form-data" id="uploadForm" novalidate>
                     {% csrf_token %}
                     <div class="mb-3">
@@ -43,22 +43,17 @@
                         <div class="card card-body bg-light mb-3">
                             <p class="text-muted small mb-3">
                                 If your file has a title banner, notes, or extra columns before the real table,
-                                tell us where the data actually starts.
+                                tell us where the data actually starts. Data is always read starting the row
+                                right after the header row.
                             </p>
                             <div class="row g-3">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="form-label">Header Row</label>
                                     {{ form.header_row }}
                                     {% for error in form.header_row.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                                     <div class="form-text">{{ form.header_row.help_text }}</div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Data Start Row</label>
-                                    {{ form.data_start_row }}
-                                    {% for error in form.data_start_row.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                                    <div class="form-text">{{ form.data_start_row.help_text }}</div>
-                                </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="form-label">Start Column</label>
                                     {{ form.start_column }}
                                     {% for error in form.start_column.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}

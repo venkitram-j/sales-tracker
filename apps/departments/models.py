@@ -4,7 +4,7 @@ from apps.core.models import TimeStampedModel
 
 
 class Department(TimeStampedModel):
-    """A department that products are categorised under (e.g. Electronics, Grocery)."""
+    """A department that products are categorised under, identified solely by name."""
 
     name = models.CharField(max_length=255, unique=True, db_index=True)
 
@@ -12,4 +12,4 @@ class Department(TimeStampedModel):
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name}"
+        return self.name

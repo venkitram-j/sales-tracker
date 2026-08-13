@@ -18,9 +18,9 @@ class DashboardView(AppLoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        qs = SalesData.objects.select_related("product", "branch", "department", "admin__user", "buyer")
+        qs = SalesData.objects.select_related("product_code", "branch", "department", "admin__user", "buyer")
 
-        totals = qs.aggregate(total_qty=Sum("sales_quantity"), total_value=Sum("sales_value"))
+        totals = qs.aggregate(total_qty=Sum("total_sales_qty"), total_value=Sum("total_sales_amt"))
         ctx["total_quantity"] = totals["total_qty"] or 0
         ctx["total_value"] = totals["total_value"] or 0
         ctx["product_count"] = Product.objects.filter(is_active=True).count()
@@ -28,7 +28,7 @@ class DashboardView(AppLoginRequiredMixin, TemplateView):
 
         ctx["branch_summary"] = (
             qs.values("branch__name")
-            .annotate(total_quantity=Sum("sales_quantity"), total_value=Sum("sales_value"), tx_count=Count("id"))
+            .annotate(total_quantity=Sum("total_sales_qty"), total_value=Sum("total_sales_amt"), tx_count=Count("id"))
             .order_by("-total_value")[:10]
         )
         ctx["recent_sales"] = qs.order_by("-start_date", "-created_at")[:15]

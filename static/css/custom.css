@@ -33,7 +33,11 @@ body {
     width: var(--sidebar-width);
     flex-shrink: 0;
     background: var(--brand-dark);
-    min-height: calc(100vh - var(--topbar-height));
+    position: sticky;
+    top: var(--topbar-height);
+    align-self: flex-start;
+    height: calc(100vh - var(--topbar-height));
+    overflow-y: auto;
 }
 
 .app-content {

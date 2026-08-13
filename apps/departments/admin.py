@@ -17,7 +17,7 @@ def mark_inactive(modeladmin, request, queryset):
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("name", "updated_at")
+    list_display = ("name", "is_active", "updated_at")
     list_filter = ("is_active",)
     search_fields = ("name",)
     ordering = ("name",)

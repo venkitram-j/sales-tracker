@@ -4,7 +4,7 @@ from apps.core.models import TimeStampedModel
 
 
 class Branch(TimeStampedModel):
-    """A physical store location."""
+    """A physical store location, identified solely by name."""
 
     name = models.CharField(max_length=255, unique=True, db_index=True)
 
@@ -13,4 +13,4 @@ class Branch(TimeStampedModel):
         verbose_name_plural = "Branches"
 
     def __str__(self):
-        return f"{self.name}"
+        return self.name

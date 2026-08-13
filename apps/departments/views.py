@@ -59,15 +59,46 @@ class DepartmentDeleteView(ObjectDeleteView):
 
 
 class DepartmentExcelUploadView(ExcelUploadView):
+    """Single-column upload: the file's only expected column is "Department"
+    (matching the model name, per the app's upload convention).
+
+    Existing departments (matched by name) are skipped rather than
+    duplicated, using a single Postgres-native `INSERT ... ON CONFLICT DO
+    NOTHING` per chunk (via bulk_create(ignore_conflicts=True)) - no
+    per-row existence query.
+    """
+
     permission_required = "departments.add_department"
     success_url = reverse_lazy("departments:list")
     entity_label = "departments"
     upload_title = "Bulk Upload Departments"
-    expected_columns = ["name", "code", "description"]
+    expected_columns = ["Department"]
 
-    def process_row(self, row_number, row):
-        name = (row.get("name") or "").strip()
-        if not name:
-            raise ValueError("'name' is required.")
+    def process_chunk(self, chunk_df):
+        if "department" not in chunk_df.columns:
+            return 0, 0, 0, ["The uploaded file must have a 'Department' column."]
 
-        Department.objects.get_or_create(name=name)
+        names = chunk_df["department"].astype(str).str.strip()
+        blank_count = int((names == "").sum() + names.isna().sum())
+        names = names[(names != "") & names.notna()].drop_duplicates(keep="last")
+
+        errors = []
+        if blank_count:
+            errors.append(f"{blank_count} row(s) skipped - missing 'Department' value.")
+
+        if names.empty:
+            return 0, 0, 0, errors
+
+        name_list = names.tolist()
+        existing_before = Department.objects.filter(name__in=name_list).count()
+
+        Department.objects.bulk_create(
+            [Department(name=n, is_active=True) for n in name_list],
+            batch_size=self.chunk_size,
+            ignore_conflicts=True,
+        )
+
+        existing_after = Department.objects.filter(name__in=name_list).count()
+        created = existing_after - existing_before
+        skipped = len(name_list) - created
+        return created, 0, skipped, errors

@@ -6,7 +6,6 @@ from django.views.generic import ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, ObjectDeleteView, SuccessMessageMixin
-from apps.products.models import Product
 
 from .forms import BuyerForm
 from .models import Buyer
@@ -22,10 +21,10 @@ class BuyerListView(CrudPermissionMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        qs = Buyer.objects.prefetch_related("products")
+        qs = Buyer.objects.all()
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(company__icontains=q) | Q(email__icontains=q))
+            qs = qs.filter(Q(name__icontains=q))
         return qs.order_by("name")
 
     def get_context_data(self, **kwargs):
@@ -60,39 +59,43 @@ class BuyerDeleteView(ObjectDeleteView):
 
 
 class BuyerExcelUploadView(ExcelUploadView):
-    """Columns expected: name, company, email, phone, address, product_skus (comma separated)."""
+    """Single-column upload: the file's only expected column is "Buyer"
+    (matching the model name). Existing buyers (matched by name) are
+    skipped rather than duplicated - see DepartmentExcelUploadView for the
+    identical Postgres-native skip-existing pattern.
+    """
 
     permission_required = "buyers.add_buyer"
     success_url = reverse_lazy("buyers:list")
     entity_label = "buyers"
     upload_title = "Bulk Upload Buyers"
-    expected_columns = ["name", "company", "email", "phone", "address", "product_skus (comma separated)"]
+    expected_columns = ["Buyer"]
 
-    def process_row(self, row_number, row):
-        name = (row.get("name") or "").strip()
-        if not name:
-            raise ValueError("'name' is required.")
-        email = (row.get("email") or "").strip()
+    def process_chunk(self, chunk_df):
+        if "buyer" not in chunk_df.columns:
+            return 0, 0, 0, ["The uploaded file must have a 'Buyer' column."]
 
-        lookup = {"email": email} if email else {"name": name}
-        buyer, _ = Buyer.objects.update_or_create(
-            **lookup,
-            defaults={
-                "name": name,
-                "company": (row.get("company") or "").strip(),
-                "email": email,
-                "phone": (row.get("phone") or "").strip(),
-                "address": (row.get("address") or "").strip(),
-                "is_active": True,
-            },
+        names = chunk_df["buyer"].astype(str).str.strip()
+        blank_count = int((names == "").sum() + names.isna().sum())
+        names = names[(names != "") & names.notna()].drop_duplicates(keep="last")
+
+        errors = []
+        if blank_count:
+            errors.append(f"{blank_count} row(s) skipped - missing 'Buyer' value.")
+
+        if names.empty:
+            return 0, 0, 0, errors
+
+        name_list = names.tolist()
+        existing_before = Buyer.objects.filter(name__in=name_list).count()
+
+        Buyer.objects.bulk_create(
+            [Buyer(name=n, is_active=True) for n in name_list],
+            batch_size=self.chunk_size,
+            ignore_conflicts=True,
         )
 
-        sku_raw = (row.get("product_skus") or row.get("products") or "").strip()
-        if sku_raw:
-            skus = [s.strip() for s in sku_raw.split(",") if s.strip()]
-            products = list(Product.objects.filter(sku__in=skus))
-            found = {p.sku for p in products}
-            missing = set(skus) - found
-            if missing:
-                raise ValueError(f"Unknown product SKU(s): {', '.join(missing)}")
-            buyer.products.set(products)
+        existing_after = Buyer.objects.filter(name__in=name_list).count()
+        created = existing_after - existing_before
+        skipped = len(name_list) - created
+        return created, 0, skipped, errors

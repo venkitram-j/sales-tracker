@@ -1,8 +1,12 @@
 # Core framework
 Django>=5.2,<5.3
 
-# Excel import/export
+# Excel import/export - pandas+calamine does the actual (fast) row reading
+# and all data manipulation is vectorized on the resulting DataFrame;
+# openpyxl is kept only for its column-letter <-> index helper utilities.
 openpyxl>=3.1,<4.0
+pandas>=2.2,<3.0
+python-calamine>=0.8,<1.0
 
 # Environment-based configuration (12-factor)
 python-decouple>=3.8,<4.0

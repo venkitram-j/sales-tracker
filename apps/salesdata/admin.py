@@ -11,11 +11,11 @@ def mark_reviewed(modeladmin, request, queryset):
 @admin.register(SalesData)
 class SalesDataAdmin(admin.ModelAdmin):
     list_display = (
-        "product", "branch", "department", "buyer", "admin",
-        "sales_quantity", "sales_value", "total_stock", "start_date", "end_date",
+        "product_code", "branch", "department", "buyer", "admin",
+        "total_sales_qty", "total_sales_amt", "total_stock", "start_date", "end_date",
     )
-    list_filter = ("branch", "department", "product", "start_date")
-    search_fields = ("product__name", "branch__name", "department__name", "admin__user__email", "buyer__name")
+    list_filter = ("branch", "department", "start_date")
+    search_fields = ("product_code__product_code", "branch__name", "department__name", "admin__user__email", "buyer__name")
     date_hierarchy = "start_date"
-    autocomplete_fields = ["product", "branch", "department", "admin", "buyer"]
+    autocomplete_fields = ["product_code", "branch", "department", "admin", "buyer"]
     actions = [mark_reviewed]

@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck disable=SC1091
-source .venv/bin/activate
+source venv/bin/activate
 
 ENV="${1:-dev}"
 if [ "$ENV" = "prod" ]; then

@@ -1,7 +1,6 @@
 import logging
-from datetime import datetime
-from decimal import Decimal, InvalidOperation
 
+import pandas as pd
 from django.contrib.auth import get_user_model
 from django.db.models import Sum, Count
 from django.urls import reverse_lazy
@@ -11,14 +10,14 @@ from django.views.generic.edit import CreateView, UpdateView
 from apps.branches.models import Branch
 from apps.buyers.models import Buyer
 from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, ObjectDeleteView, SuccessMessageMixin
-from apps.core.utils import scan_text_before_row
+from apps.core.utils import extract_pre_header_text
 from apps.departments.models import Department
 from apps.products.models import Product
 from apps.store_admins.models import StoreAdmin
 
 from .forms import SalesDataForm
 from .models import SalesData
-from .report_period import parse_report_period
+from .report_period import parse_branch_name, parse_report_period
 
 logger = logging.getLogger("apps.salesdata")
 User = get_user_model()
@@ -40,7 +39,7 @@ class SalesDataFilterMixin:
         if branch_id:
             qs = qs.filter(branch_id=branch_id)
         if product_id:
-            qs = qs.filter(product_id=product_id)
+            qs = qs.filter(product_code_id=product_id)
         if department_id:
             qs = qs.filter(department_id=department_id)
         if admin_id:
@@ -56,7 +55,7 @@ class SalesDataFilterMixin:
     def get_filter_context(self):
         return {
             "branches": Branch.objects.filter(is_active=True).order_by("name"),
-            "products": Product.objects.filter(is_active=True).order_by("name"),
+            "products": Product.objects.filter(is_active=True).order_by("product_code"),
             "departments": Department.objects.filter(is_active=True).order_by("name"),
             "admins": StoreAdmin.objects.select_related("user").filter(is_active=True),
             "buyers": Buyer.objects.filter(is_active=True).order_by("name"),
@@ -80,13 +79,13 @@ class SalesDataListView(SalesDataFilterMixin, CrudPermissionMixin, ListView):
     paginate_by = 30
 
     def get_queryset(self):
-        qs = SalesData.objects.select_related("product", "branch", "department", "admin__user", "buyer")
+        qs = SalesData.objects.select_related("product_code", "branch", "department", "admin__user", "buyer")
         return self.filter_queryset(qs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.update(self.get_filter_context())
-        totals = self.get_queryset().aggregate(total_qty=Sum("sales_quantity"), total_value=Sum("sales_value"))
+        totals = self.get_queryset().aggregate(total_qty=Sum("total_sales_qty"), total_value=Sum("total_sales_amt"))
         ctx["total_qty"] = totals["total_qty"] or 0
         ctx["total_value"] = totals["total_value"] or 0
         return ctx
@@ -101,17 +100,17 @@ class SalesDataBranchWiseView(SalesDataFilterMixin, CrudPermissionMixin, ListVie
     paginate_by = 50
 
     def get_queryset(self):
-        qs = SalesData.objects.select_related("product", "branch", "department")
+        qs = SalesData.objects.select_related("product_code", "branch", "department")
         qs = self.filter_queryset(qs)
         return (
-            qs.values("branch__name", "branch__code", "product__name", "product__sku", "department__name")
+            qs.values("branch__name", "product_code__product_code", "product_code__description", "department__name")
             .annotate(
-                total_quantity=Sum("sales_quantity"),
-                total_value=Sum("sales_value"),
+                total_quantity=Sum("total_sales_qty"),
+                total_value=Sum("total_sales_amt"),
                 total_stock=Sum("total_stock"),
                 transaction_count=Count("id"),
             )
-            .order_by("branch__name", "product__name")
+            .order_by("branch__name", "product_code__product_code")
         )
 
     def get_context_data(self, **kwargs):
@@ -146,26 +145,34 @@ class SalesDataDeleteView(ObjectDeleteView):
 
 
 class SalesDataExcelUploadView(ExcelUploadView):
-    """Bulk-imports sales/stock-period records, auto-creating Product /
-    Branch / Department / StoreAdmin / Buyer records as needed so a single
-    spreadsheet can seed the whole dataset.
+    """Columns expected (case-insensitive, matching the model field names):
+    "Product Code", "Description", "Department", "Admin", "Buyer",
+    "Total Sales Qty", "Total Sales Amt", "Total Stock".
 
-    Expected per-row columns (case-insensitive):
-        product_sku, product_name, unit_price (optional, only used if the
-        product doesn't exist yet), department_code, department_name
-        (optional - falls back to the product's existing department if
-        omitted), branch_code, branch_name, admin_email, buyer_name,
-        quantity, value, total_stock
+    Branch and the reporting period (start_date / end_date) are NOT
+    per-row columns - the whole file covers a single branch and a single
+    period, given as banner lines above the header row:
 
-    The reporting period (start_date / end_date) is NOT a per-row column.
-    It is parsed once from a banner line that sits above the header row,
-    in the format:
-
+        Branch :- Downtown
         Report Period From :- 01-09-2025,  To :- 30-09-2025
 
-    and applied to every row created from this upload. Set "Header Row"
-    (in Sheet Layout Options) to the row your real column headers are on
-    so the banner - which sits above it - gets picked up.
+    NOTE: the exact wording/format of the "Branch" banner line has not
+    been confirmed against a real sample file - apps/salesdata/report_period.py
+    documents the flexible pattern currently used
+    (`Branch[:/- ]<name>`, case-insensitive) and is the single place to
+    adjust it once the real format is confirmed.
+
+    Product Code, Department, Buyer and Admin must all already exist
+    (upload them via their own pages first) - this view does not
+    auto-create master data. Only the Branch referenced in the banner
+    must also already exist.
+
+    Upsert semantics: for a given product_code within this upload's
+    branch + reporting period, an existing Sales Data record is REPLACED
+    (its fields updated) rather than duplicated, using a single
+    Postgres-native `INSERT ... ON CONFLICT (...) DO UPDATE` per chunk
+    (bulk_create(update_conflicts=True)) - no separate per-row exists
+    check.
     """
 
     permission_required = "salesdata.add_salesdata"
@@ -173,131 +180,165 @@ class SalesDataExcelUploadView(ExcelUploadView):
     entity_label = "sales records"
     upload_title = "Bulk Upload Sales Data"
     expected_columns = [
-        "product_sku", "product_name", "unit_price (optional)",
-        "department_code (optional)", "department_name (optional)",
-        "branch_code", "branch_name", "admin_email", "buyer_name",
-        "quantity", "value", "total_stock",
+        "Product Code", "Description", "Department", "Admin", "Buyer",
+        "Total Sales Qty", "Total Sales Amt", "Total Stock",
     ]
     upload_help_text = (
-        "start_date / end_date are NOT columns in the table - they're parsed automatically from a line "
-        "above your header row reading: \"Report Period From :- 01-09-2025,  To :- 30-09-2025\". "
-        "Set Header Row (below) to the row your table headers are actually on, so that line is included in the scan."
+        "Branch and the reporting period are NOT columns - they're parsed automatically from lines above your "
+        "header row, e.g. \"Branch :- Downtown\" and \"Report Period From :- 01-09-2025,  To :- 30-09-2025\". "
+        "Set Header Row (below) to the row your table headers are actually on. Product Code, Department, Admin "
+        "and Buyer must already exist. An existing record for the same product code within this branch + period "
+        "is replaced with the new values; otherwise a new record is created."
     )
 
-    def before_rows(self, form, uploaded_file, header_row):
-        texts = scan_text_before_row(uploaded_file, header_row)
+    REQUIRED_COLUMNS = {
+        "product_code", "description", "department", "admin", "buyer",
+        "total_sales_qty", "total_sales_amt", "total_stock",
+    }
+
+    def before_rows(self, form, raw_df, header_row):
+        texts = extract_pre_header_text(raw_df, header_row)
+
         start_date, end_date = parse_report_period(texts)
         if not start_date or not end_date:
             raise ValueError(
                 "Could not find a 'Report Period From :- DD-MM-YYYY, To :- DD-MM-YYYY' line above the header row. "
                 "Make sure Header Row (Sheet Layout Options) is set below that line, and the line itself is somewhere above it."
             )
+
+        branch_name = parse_branch_name(texts)
+        if not branch_name:
+            raise ValueError(
+                "Could not find a 'Branch :- <name>' line above the header row. "
+                "Make sure Header Row (Sheet Layout Options) is set below that line."
+            )
+        try:
+            branch = Branch.objects.get(name=branch_name)
+        except Branch.DoesNotExist:
+            raise ValueError(f"Branch '{branch_name}' does not exist. Upload it via the Branches module first.")
+
         self._start_date = start_date
         self._end_date = end_date
+        self._branch = branch
 
-    def process_row(self, row_number, row):
-        product_sku = (row.get("product_sku") or "").strip()
-        product_name = (row.get("product_name") or "").strip()
-        branch_code = (row.get("branch_code") or "").strip()
-        branch_name = (row.get("branch_name") or "").strip()
-        admin_email = (row.get("admin_email") or "").strip().lower()
-        buyer_name = (row.get("buyer_name") or "").strip()
+    def process_chunk(self, chunk_df: pd.DataFrame):
+        missing_cols = self.REQUIRED_COLUMNS - set(chunk_df.columns)
+        if missing_cols:
+            return 0, 0, 0, [f"The uploaded file must have columns: {', '.join(sorted(missing_cols))}."]
 
-        if not (product_sku and product_name and branch_code and branch_name and admin_email and buyer_name):
-            raise ValueError(
-                "'product_sku', 'product_name', 'branch_code', 'branch_name', 'admin_email' and 'buyer_name' are all required."
+        df = chunk_df[list(self.REQUIRED_COLUMNS)].copy()
+        for col in ["product_code", "description", "department", "admin", "buyer"]:
+            df[col] = df[col].astype(str).str.strip()
+        df["admin"] = df["admin"].str.lower()
+
+        for col in ["total_sales_qty", "total_sales_amt", "total_stock"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        errors = []
+        invalid_mask = (
+            (df["product_code"] == "") | (df["department"] == "") | (df["admin"] == "") | (df["buyer"] == "")
+            | df["total_sales_qty"].isna() | (df["total_sales_qty"] <= 0)
+            | df["total_sales_amt"].isna() | (df["total_sales_amt"] < 0)
+            | df["total_stock"].isna() | (df["total_stock"] < 0)
+        )
+        invalid_count = int(invalid_mask.sum())
+        if invalid_count:
+            errors.append(
+                f"{invalid_count} row(s) skipped - missing 'Product Code'/'Department'/'Admin'/'Buyer', or an "
+                "invalid/non-positive 'Total Sales Qty'/'Total Sales Amt'/'Total Stock'."
             )
+        df = df[~invalid_mask]
 
-        quantity_raw = row.get("quantity")
-        value_raw = row.get("value")
-        total_stock_raw = row.get("total_stock")
-        try:
-            quantity = int(quantity_raw)
-            if quantity <= 0:
-                raise ValueError
-        except (TypeError, ValueError):
-            raise ValueError("'quantity' must be a positive whole number.")
+        if df.empty:
+            return 0, 0, 0, errors
 
-        try:
-            value = Decimal(str(value_raw))
-        except (InvalidOperation, TypeError):
-            raise ValueError("'value' must be numeric.")
+        # De-duplicate within this chunk, keeping the last occurrence of a product_code
+        # (branch + period are constant for the whole file, so product_code alone is the chunk key).
+        df = df.drop_duplicates(subset="product_code", keep="last")
 
-        try:
-            total_stock = int(total_stock_raw)
-            if total_stock < 0:
-                raise ValueError
-        except (TypeError, ValueError):
-            raise ValueError("'total_stock' must be a whole number.")
+        # --- Resolve references; all must already exist -------------------
+        product_codes = set(df["product_code"].unique())
+        product_map = {p.product_code: p for p in Product.objects.filter(product_code__in=product_codes)}
+        missing_products = sorted(product_codes - set(product_map.keys()))
+        if missing_products:
+            errors.append(f"Unknown product code(s), row(s) skipped: {', '.join(missing_products)}.")
+            df = df[df["product_code"].isin(product_map.keys())]
 
-        # --- get-or-create supporting records -----------------------------
-        department_from_row = self._resolve_department(row)
+        dept_names = set(df["department"].unique()) if not df.empty else set()
+        dept_map = {d.name: d for d in Department.objects.filter(name__in=dept_names)}
+        missing_depts = sorted(dept_names - set(dept_map.keys()))
+        if missing_depts:
+            errors.append(f"Unknown department(s), row(s) skipped: {', '.join(missing_depts)}.")
+            df = df[df["department"].isin(dept_map.keys())]
 
-        unit_price_raw = row.get("unit_price")
-        try:
-            unit_price = Decimal(str(unit_price_raw)) if unit_price_raw not in (None, "") else (value / quantity)
-        except (InvalidOperation, ZeroDivisionError):
-            unit_price = Decimal("0")
+        buyer_names = set(df["buyer"].unique()) if not df.empty else set()
+        buyer_map = {b.name: b for b in Buyer.objects.filter(name__in=buyer_names)}
+        missing_buyers = sorted(buyer_names - set(buyer_map.keys()))
+        if missing_buyers:
+            errors.append(f"Unknown buyer(s), row(s) skipped: {', '.join(missing_buyers)}.")
+            df = df[df["buyer"].isin(buyer_map.keys())]
 
-        existing_product = Product.objects.filter(sku=product_sku).select_related("department").first()
-        if existing_product:
-            product = existing_product
-            department = department_from_row or existing_product.department
-        else:
-            if department_from_row is None:
-                raise ValueError(
-                    f"Product '{product_sku}' does not exist yet - 'department_code' or 'department_name' "
-                    "is required to create it."
+        admin_emails = set(df["admin"].unique()) if not df.empty else set()
+        user_map = {u.email.lower(): u for u in User.objects.filter(email__in=admin_emails)}
+        missing_users = sorted(admin_emails - set(user_map.keys()))
+        if missing_users:
+            errors.append(f"No user found for admin email(s): {', '.join(missing_users)}.")
+
+        admin_map = {}
+        if user_map:
+            user_ids = [u.id for u in user_map.values()]
+            store_admins = StoreAdmin.objects.filter(user_id__in=user_ids).select_related("user")
+            admin_map = {sa.user.email.lower(): sa for sa in store_admins}
+            missing_store_admins = sorted(set(user_map.keys()) - set(admin_map.keys()))
+            if missing_store_admins:
+                errors.append(
+                    f"User(s) found but not registered as Store Admins, row(s) skipped: "
+                    f"{', '.join(missing_store_admins)}. Add them via the Admins module first."
                 )
-            department = department_from_row
-            product = Product.objects.create(
-                sku=product_sku, name=product_name, unit_price=unit_price, department=department
-            )
+        if not df.empty:
+            df = df[df["admin"].isin(admin_map.keys())]
 
-        branch, _ = Branch.objects.get_or_create(
-            code=branch_code,
-            defaults={"name": branch_name},
-        )
-        try:
-            user = User.objects.get(email__iexact=admin_email)
-        except User.DoesNotExist:
-            raise ValueError(f"No user found with email '{admin_email}'. Create the user in the admin panel first.")
+        if df.empty:
+            return 0, 0, 0, errors
 
-        admin, _ = StoreAdmin.objects.get_or_create(user=user)
-        if not admin.branches.filter(pk=branch.pk).exists():
-            admin.branches.add(branch)
+        rows = list(df.itertuples(index=False))
+        codes_in_chunk = [r.product_code for r in rows]
 
-        buyer, _ = Buyer.objects.get_or_create(name=buyer_name)
-
-        SalesData.objects.create(
-            product=product,
-            branch=branch,
-            department=department,
-            admin=admin,
-            buyer=buyer,
-            sales_quantity=quantity,
-            sales_value=value,
-            total_stock=total_stock,
-            start_date=self._start_date,
-            end_date=self._end_date,
+        existing_before = set(
+            SalesData.objects.filter(
+                branch=self._branch, start_date=self._start_date, end_date=self._end_date,
+                product_code__product_code__in=codes_in_chunk,
+            ).values_list("product_code__product_code", flat=True)
         )
 
-    @staticmethod
-    def _resolve_department(row):
-        """Uses the row's department_code/department_name if given (creating it
-        if needed); otherwise returns None so the caller falls back to the
-        product's own department.
-        """
-        dept_code = (row.get("department_code") or "").strip()
-        dept_name = (row.get("department_name") or "").strip()
-        if not dept_code and not dept_name:
-            return None
-        if dept_code:
-            department, _ = Department.objects.get_or_create(
-                code=dept_code, defaults={"name": dept_name or dept_code}
+        objs = [
+            SalesData(
+                product_code=product_map[r.product_code],
+                description=r.description,
+                department=dept_map[r.department],
+                branch=self._branch,
+                admin=admin_map[r.admin],
+                buyer=buyer_map[r.buyer],
+                start_date=self._start_date,
+                end_date=self._end_date,
+                total_sales_qty=int(r.total_sales_qty),
+                total_sales_amt=r.total_sales_amt,
+                total_stock=int(r.total_stock),
             )
-        else:
-            department, _ = Department.objects.get_or_create(
-                name=dept_name, defaults={"code": dept_name[:32]}
-            )
-        return department
+            for r in rows
+        ]
+
+        SalesData.objects.bulk_create(
+            objs,
+            update_conflicts=True,
+            update_fields=[
+                "description", "department", "admin", "buyer",
+                "total_sales_qty", "total_sales_amt", "total_stock",
+            ],
+            unique_fields=["product_code", "branch", "start_date", "end_date"],
+            batch_size=self.chunk_size,
+        )
+
+        updated = len(existing_before)
+        created = len(objs) - updated
+        return created, updated, 0, errors

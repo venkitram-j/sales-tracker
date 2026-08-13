@@ -1,4 +1,6 @@
-<form method="get" class="row g-2 align-items-end">
+<form method="get" class="row g-2 align-items-end"
+      hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true"
+      hx-trigger="change from:find select, change from:find input[type='date'], submit" data-no-disable="true">
     <div class="col-md-2">
         <label class="form-label small mb-1">Branch</label>
         <select name="branch" class="form-select">
@@ -13,7 +15,7 @@
         <select name="product" class="form-select">
             <option value="">All Products</option>
             {% for p in products %}
-            <option value="{{ p.pk }}" {% if selected_product == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
+            <option value="{{ p.pk }}" {% if selected_product == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.product_code }}</option>
             {% endfor %}
         </select>
     </div>
@@ -54,6 +56,7 @@
     </div>
     <div class="col-12">
         <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-funnel me-1"></i>Filter</button>
-        <a href="." class="btn btn-outline-secondary btn-sm">Clear</a>
+        <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"
+           hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">Clear</a>
     </div>
 </form>

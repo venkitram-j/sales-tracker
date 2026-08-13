@@ -27,6 +27,8 @@ class ExcelUploadForm(forms.Form):
     Also lets the user tell the parser where the real table actually
     starts, for spreadsheets that have a title banner, notes, or extra
     leading columns before the data - see apps.core.utils.iter_excel_rows.
+    Data is always assumed to start on the row immediately after the
+    header row.
     """
 
     excel_file = forms.FileField(
@@ -38,14 +40,7 @@ class ExcelUploadForm(forms.Form):
         initial=1,
         min_value=1,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
-        help_text="Row number containing the column headers (1 = first row).",
-    )
-    data_start_row = forms.IntegerField(
-        label="Data Start Row",
-        required=False,
-        min_value=1,
-        widget=forms.NumberInput(attrs={"class": "form-control", "placeholder": "Auto (header row + 1)"}),
-        help_text="Row number where data begins. Leave blank to use the row right after the header row.",
+        help_text="Row number containing the column headers (1 = first row). Data is read starting the row right after this.",
     )
     start_column = forms.CharField(
         label="Start Column",
@@ -78,11 +73,3 @@ class ExcelUploadForm(forms.Form):
         except (ValueError, IllegalCharacterError):
             raise forms.ValidationError("That doesn't look like a valid column letter.")
         return raw
-
-    def clean(self):
-        cleaned_data = super().clean()
-        header_row = cleaned_data.get("header_row")
-        data_start_row = cleaned_data.get("data_start_row")
-        if header_row and data_start_row and data_start_row <= header_row:
-            self.add_error("data_start_row", "Data start row must come after the header row.")
-        return cleaned_data

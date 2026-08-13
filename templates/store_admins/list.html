@@ -13,7 +13,9 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-white">
-        <form method="get" class="row g-2">
+        <form method="get" class="row g-2"
+              hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true"
+              hx-trigger="keyup changed delay:400ms from:find input[name='q'], submit" data-no-disable="true">
             <div class="col-auto flex-grow-1">
                 <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name or email...">
             </div>
@@ -22,18 +24,18 @@
             </div>
         </form>
     </div>
+    <div id="results">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
                 <thead>
-                    <tr><th>Name</th><th>Email</th><th>Phone</th><th>Branches Managed</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    <tr><th>Name</th><th>Email</th><th>Branches Managed</th><th>Status</th><th class="text-end">Actions</th></tr>
                 </thead>
                 <tbody>
                 {% for admin in store_admins %}
                     <tr>
                         <td>{{ admin.full_name }}</td>
                         <td>{{ admin.user.email }}</td>
-                        <td>{{ admin.phone|default:"—" }}</td>
                         <td>{{ admin.branch_list|default:"—" }}</td>
                         <td>
                             {% if admin.is_active %}<span class="badge text-bg-success">Active</span>
@@ -53,13 +55,14 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6" class="text-center text-muted py-4">No admins found.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted py-4">No admins found.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
     {% include "partials/pagination.html" %}
+    </div>
 </div>
 
 {% include "partials/delete_modal.html" %}

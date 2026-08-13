@@ -4,12 +4,22 @@
     <nav>
         <ul class="pagination pagination-sm mb-0">
             {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}"
+                       hx-get="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}"
+                       hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">Previous</a>
+                </li>
             {% else %}
                 <li class="page-item disabled"><span class="page-link">Previous</span></li>
             {% endif %}
             {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a></li>
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}"
+                       hx-get="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}"
+                       hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">Next</a>
+                </li>
             {% else %}
                 <li class="page-item disabled"><span class="page-link">Next</span></li>
             {% endif %}

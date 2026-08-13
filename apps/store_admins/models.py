@@ -17,7 +17,6 @@ class StoreAdmin(TimeStampedModel):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="store_admin_profile")
     branches = models.ManyToManyField(Branch, related_name="store_admins", blank=True)
-    phone = models.CharField(max_length=32, blank=True)
 
     class Meta:
         ordering = ["user__first_name", "user__last_name"]

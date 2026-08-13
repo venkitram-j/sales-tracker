@@ -17,7 +17,7 @@ def mark_inactive(modeladmin, request, queryset):
 
 @admin.register(StoreAdmin)
 class StoreAdminAdmin(admin.ModelAdmin):
-    list_display = ("full_name_display", "email_display", "phone", "branch_list_display", "is_active")
+    list_display = ("full_name_display", "email_display", "branch_list_display", "is_active")
     list_filter = ("is_active", "branches")
     search_fields = ("user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("branches",)

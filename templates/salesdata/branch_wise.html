@@ -16,22 +16,23 @@
     <div class="card-header bg-white">
         <h6 class="mb-0">Totals by Branch &amp; Product</h6>
     </div>
+    <div id="results">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle" id="branchWiseTable">
                 <thead>
                     <tr>
-                        <th>Branch</th><th>Product</th><th>SKU</th><th>Department</th>
+                        <th>Branch</th><th>Product Code</th><th>Description</th><th>Department</th>
                         <th class="text-end">Transactions</th><th class="text-end">Total Qty</th>
-                        <th class="text-end">Total Value</th><th class="text-end">Total Stock</th>
+                        <th class="text-end">Total Amt</th><th class="text-end">Total Stock</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for row in summary_rows %}
                     <tr>
                         <td>{{ row.branch__name }}</td>
-                        <td>{{ row.product__name }}</td>
-                        <td>{{ row.product__sku }}</td>
+                        <td>{{ row.product_code__product_code }}</td>
+                        <td>{{ row.product_code__description|default:"—"|truncatechars:40 }}</td>
                         <td>{{ row.department__name }}</td>
                         <td class="text-end">{{ row.transaction_count }}</td>
                         <td class="text-end">{{ row.total_quantity }}</td>
@@ -46,5 +47,6 @@
         </div>
     </div>
     {% include "partials/pagination.html" %}
+    </div>
 </div>
 {% endblock %}

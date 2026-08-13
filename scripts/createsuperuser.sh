@@ -4,6 +4,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck disable=SC1091
-source .venv/bin/activate
+source venv/bin/activate
 export DJANGO_SETTINGS_MODULE=config.settings.development
 python manage.py createsuperuser

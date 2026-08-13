@@ -12,7 +12,7 @@ User = get_user_model()
 class StoreAdminForm(BootstrapModelForm):
     class Meta:
         model = StoreAdmin
-        fields = ["user", "branches", "phone", "is_active"]
+        fields = ["user", "branches", "is_active"]
         widgets = {
             "branches": SelectMultiple(attrs={"size": 6}),
         }

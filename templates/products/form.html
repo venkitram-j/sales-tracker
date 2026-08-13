@@ -14,29 +14,15 @@
                     <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
                     {% endif %}
                     <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label">Name</label>
-                            {{ form.name }}
-                            {% for error in form.name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">SKU</label>
-                            {{ form.sku }}
-                            {% for error in form.sku.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        <div class="col-md-6">
+                            <label class="form-label">Product Code</label>
+                            {{ form.product_code }}
+                            {% for error in form.product_code.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Department</label>
                             {{ form.department }}
                             {% for error in form.department.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Category</label>
-                            {{ form.category }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Unit Price</label>
-                            {{ form.unit_price }}
-                            {% for error in form.unit_price.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>

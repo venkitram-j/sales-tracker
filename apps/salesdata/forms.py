@@ -12,8 +12,8 @@ class SalesDataForm(BootstrapModelForm):
     class Meta:
         model = SalesData
         fields = [
-            "product", "branch", "department", "admin", "buyer",
-            "sales_quantity", "sales_value", "total_stock", "start_date", "end_date",
+            "product_code", "description", "department", "branch", "admin", "buyer",
+            "start_date", "end_date", "total_sales_qty", "total_sales_amt", "total_stock",
         ]
 
     def clean(self):

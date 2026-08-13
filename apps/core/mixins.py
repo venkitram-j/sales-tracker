@@ -3,7 +3,6 @@ import logging
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db import transaction
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View
@@ -11,7 +10,7 @@ from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 
 from apps.core.forms import ExcelUploadForm
-from apps.core.utils import ExcelParseError, iter_excel_rows
+from apps.core.utils import ExcelParseError, build_data_frame, chunk_dataframe, load_excel
 
 logger = logging.getLogger("apps.core.mixins")
 
@@ -58,12 +57,28 @@ class CrudPermissionMixin(AppLoginRequiredMixin, PermissionRequiredMixin):
 
 
 class ExcelUploadView(CrudPermissionMixin, FormView):
-    """Generic base view for bulk-creating/updating records from an .xlsx file.
+    """Generic base view for bulk-creating/updating records from an .xlsx file,
+    entirely on top of pandas DataFrames - built for large files (500k+ rows):
 
-    Subclasses must implement `process_row(row_number, row)` returning
-    nothing on success and raising ValueError(message) on a recoverable
-    per-row problem. Each row is committed independently so one bad row
-    does not abort the whole file.
+    - The workbook is read once with pandas + the calamine engine (a fast
+      Rust-based reader, see apps.core.utils.load_excel).
+    - Header detection, whitespace stripping, and blank-row removal are
+      all vectorized pandas operations (apps.core.utils.build_data_frame)
+      rather than a per-row Python loop.
+    - The cleaned DataFrame is split into fixed-size chunks
+      (apps.core.utils.chunk_dataframe) and each chunk is handed to the
+      subclass for database writes, so a 500k-row file becomes ~100
+      round trips instead of 500k.
+
+    Subclasses implement:
+
+    - `process_chunk(chunk_df)`: given a DataFrame slice of up to
+      `chunk_size` rows (indexed by their original Excel row number),
+      validate/resolve/write it to the database - typically via a bulk
+      existence check followed by `bulk_create`/`bulk_create(...,
+      update_conflicts=True)` - and return (created_count, updated_count,
+      skipped_count, errors), where `errors` is a list of human-readable
+      strings for any rows that couldn't be applied.
     """
 
     form_class = ExcelUploadForm
@@ -73,6 +88,7 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
     expected_columns = []
     upload_help_text = ""
     list_url_name = ""
+    chunk_size = 5000
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -82,68 +98,75 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
         ctx["cancel_url"] = self.success_url
         return ctx
 
-    def process_row(self, row_number, row):
-        raise NotImplementedError
-
-    def before_rows(self, form, uploaded_file, header_row):
-        """Optional hook for subclasses that need to inspect the file (e.g.
-        metadata sitting above the header row) before per-row processing
-        starts. Raise ValueError with a user-facing message to abort the
-        whole upload before any rows are processed. Must leave the file
-        pointer at position 0 when done, since `iter_excel_rows` reads
-        `uploaded_file` again immediately afterwards.
+    def before_rows(self, form, raw_df, header_row):
+        """Optional hook for subclasses that need to inspect the raw,
+        header-less DataFrame (e.g. metadata sitting above the header row)
+        before per-chunk processing starts. Raise ValueError with a
+        user-facing message to abort the whole upload before any rows are
+        processed.
         """
         return None
+
+    def process_chunk(self, chunk_df):
+        """Must return (created_count, updated_count, skipped_count, errors)."""
+        raise NotImplementedError
 
     def form_valid(self, form):
         uploaded_file = form.cleaned_data["excel_file"]
         header_row = form.cleaned_data["header_row"]
-        data_start_row = form.cleaned_data.get("data_start_row")
         start_col = form.cleaned_data["start_column_index"]
-        success_count = 0
-        errors = []
 
         try:
-            self.before_rows(form, uploaded_file, header_row)
+            raw_df = load_excel(uploaded_file)
+        except ExcelParseError as exc:
+            messages.error(self.request, str(exc))
+            return self.render_to_response(self.get_context_data(form=form))
+
+        try:
+            self.before_rows(form, raw_df, header_row)
         except ValueError as exc:
             messages.error(self.request, str(exc))
             return self.render_to_response(self.get_context_data(form=form))
 
         try:
-            rows = list(
-                iter_excel_rows(
-                    uploaded_file,
-                    header_row=header_row,
-                    data_start_row=data_start_row,
-                    start_col=start_col,
-                )
-            )
+            data = build_data_frame(raw_df, header_row=header_row, start_col=start_col)
         except ExcelParseError as exc:
             messages.error(self.request, str(exc))
             return self.render_to_response(self.get_context_data(form=form))
 
-        for row_number, row in rows:
-            try:
-                with transaction.atomic():
-                    self.process_row(row_number, row)
-                success_count += 1
-            except ValueError as exc:
-                errors.append(f"Row {row_number}: {exc}")
-            except Exception:  # noqa: BLE001
-                logger.exception("Unexpected error processing row %s", row_number)
-                errors.append(f"Row {row_number}: unexpected error, see server logs.")
+        created = updated = skipped = 0
+        errors = []
 
-        if success_count:
-            messages.success(self.request, f"Successfully imported {success_count} {self.entity_label}.")
+        for chunk in chunk_dataframe(data, self.chunk_size):
+            if chunk.empty:
+                continue
+            try:
+                c, u, s, chunk_errors = self.process_chunk(chunk)
+                created += c
+                updated += u
+                skipped += s
+                errors.extend(chunk_errors)
+            except Exception:  # noqa: BLE001
+                logger.exception("Chunk of %s rows failed during bulk insert/update", len(chunk))
+                errors.append(f"A batch of {len(chunk)} row(s) failed unexpectedly; see server logs.")
+
+        if created or updated or skipped:
+            parts = []
+            if created:
+                parts.append(f"{created} created")
+            if updated:
+                parts.append(f"{updated} updated")
+            if skipped:
+                parts.append(f"{skipped} already existed and were skipped")
+            messages.success(self.request, f"Processed {self.entity_label}: {', '.join(parts)}.")
         if errors:
             preview = "; ".join(errors[:10])
             more = f" (+{len(errors) - 10} more)" if len(errors) > 10 else ""
-            messages.warning(self.request, f"{len(errors)} row(s) skipped: {preview}{more}")
-        if not success_count and not errors:
+            messages.warning(self.request, f"{len(errors)} row(s) skipped due to errors: {preview}{more}")
+        if not created and not updated and not skipped and not errors:
             messages.warning(
                 self.request,
-                "No data rows were found. Double-check the Header Row, Data Start Row and Start Column settings "
-                "against your file.",
+                "No data rows were found. Double-check the Header Row and Start Column settings against your file.",
             )
 
         return self.redirect_after_upload()

@@ -17,8 +17,8 @@ def mark_inactive(modeladmin, request, queryset):
 
 @admin.register(Buyer)
 class BuyerAdmin(admin.ModelAdmin):
-    list_display = ("name", "company", "email", "phone", "is_active", "updated_at")
+    list_display = ("name", "is_active", "updated_at")
     list_filter = ("is_active",)
-    search_fields = ("name", "company", "email")
-    filter_horizontal = ("products",)
+    search_fields = ("name",)
+    ordering = ("name",)
     actions = [mark_active, mark_inactive]

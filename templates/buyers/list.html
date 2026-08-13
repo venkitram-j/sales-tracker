@@ -13,28 +13,28 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-white">
-        <form method="get" class="row g-2">
+        <form method="get" class="row g-2"
+              hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true"
+              hx-trigger="keyup changed delay:400ms from:find input[name='q'], submit" data-no-disable="true">
             <div class="col-auto flex-grow-1">
-                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name, company or email...">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name...">
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
             </div>
         </form>
     </div>
+    <div id="results">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
                 <thead>
-                    <tr><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    <tr><th>Name</th><th>Status</th><th class="text-end">Actions</th></tr>
                 </thead>
                 <tbody>
                 {% for buyer in buyers %}
                     <tr>
                         <td>{{ buyer.name }}</td>
-                        <td>{{ buyer.company|default:"—" }}</td>
-                        <td>{{ buyer.email|default:"—" }}</td>
-                        <td>{{ buyer.phone|default:"—" }}</td>
                         <td>
                             {% if buyer.is_active %}<span class="badge text-bg-success">Active</span>
                             {% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}
@@ -53,13 +53,14 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6" class="text-center text-muted py-4">No buyers found.</td></tr>
+                    <tr><td colspan="3" class="text-center text-muted py-4">No buyers found.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
     {% include "partials/pagination.html" %}
+    </div>
 </div>
 
 {% include "partials/delete_modal.html" %}

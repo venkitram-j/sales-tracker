@@ -25,11 +25,11 @@ class ProductListView(CrudPermissionMixin, ListView):
         qs = Product.objects.select_related("department")
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(sku__icontains=q) | Q(category__icontains=q))
+            qs = qs.filter(Q(product_code__icontains=q) | Q(description__icontains=q))
         department_id = self.request.GET.get("department")
         if department_id:
             qs = qs.filter(department_id=department_id)
-        return qs.order_by("name")
+        return qs.order_by("product_code")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -65,49 +65,74 @@ class ProductDeleteView(ObjectDeleteView):
 
 
 class ProductExcelUploadView(ExcelUploadView):
+    """Columns expected: "Product Code", "Description", "Department".
+
+    The referenced Department must already exist (upload it via the
+    Departments module first) - this view does not auto-create master
+    data, only Products. Existing products (matched by product_code) are
+    skipped rather than duplicated.
+    """
+
     permission_required = "products.add_product"
     success_url = reverse_lazy("products:list")
     entity_label = "products"
     upload_title = "Bulk Upload Products"
-    expected_columns = ["name", "sku", "department_code", "department_name", "category", "description", "unit_price"]
+    expected_columns = ["Product Code", "Description", "Department"]
 
-    def process_row(self, row_number, row):
-        name = (row.get("name") or "").strip()
-        sku = (row.get("sku") or "").strip()
-        if not name or not sku:
-            raise ValueError("'name' and 'sku' are required.")
-        unit_price = row.get("unit_price") or 0
-        try:
-            unit_price = float(unit_price)
-        except (TypeError, ValueError):
-            raise ValueError("'unit_price' must be numeric.")
+    def process_chunk(self, chunk_df):
+        required = {"product_code", "description", "department"}
+        missing_cols = required - set(chunk_df.columns)
+        if missing_cols:
+            return 0, 0, 0, [f"The uploaded file must have columns: {', '.join(sorted(missing_cols))}."]
 
-        department = self._resolve_department(row)
+        rows = chunk_df[["product_code", "description", "department"]].copy()
+        rows["product_code"] = rows["product_code"].astype(str).str.strip()
+        rows["description"] = rows["description"].astype(str).str.strip()
+        rows["department"] = rows["department"].astype(str).str.strip()
 
-        Product.objects.update_or_create(
-            sku=sku,
-            defaults={
-                "name": name,
-                "department": department,
-                "category": (row.get("category") or "").strip(),
-                "description": (row.get("description") or "").strip(),
-                "unit_price": unit_price,
-                "is_active": True,
-            },
+        blank_mask = (rows["product_code"] == "") | (rows["department"] == "")
+        blank_count = int(blank_mask.sum())
+        rows = rows[~blank_mask]
+
+        errors = []
+        if blank_count:
+            errors.append(f"{blank_count} row(s) skipped - missing 'Product Code' or 'Department' value.")
+
+        if rows.empty:
+            return 0, 0, 0, errors
+
+        # De-duplicate within this chunk, keeping the last occurrence of a product_code.
+        rows = rows.drop_duplicates(subset="product_code", keep="last")
+
+        dept_names = set(rows["department"].unique())
+        dept_map = {d.name: d for d in Department.objects.filter(name__in=dept_names)}
+        missing_depts = sorted(dept_names - set(dept_map.keys()))
+        if missing_depts:
+            errors.append(
+                f"Unknown department(s) - row(s) skipped: {', '.join(missing_depts)}. "
+                "Upload these via the Departments module first."
+            )
+            rows = rows[rows["department"].isin(dept_map.keys())]
+
+        if rows.empty:
+            return 0, 0, 0, errors
+
+        codes = rows["product_code"].tolist()
+        existing_before = Product.objects.filter(product_code__in=codes).count()
+
+        Product.objects.bulk_create(
+            [
+                Product(
+                    product_code=r.product_code, description=r.description,
+                    department=dept_map[r.department], is_active=True,
+                )
+                for r in rows.itertuples(index=False)
+            ],
+            batch_size=self.chunk_size,
+            ignore_conflicts=True,
         )
 
-    @staticmethod
-    def _resolve_department(row):
-        dept_code = (row.get("department_code") or "").strip()
-        dept_name = (row.get("department_name") or "").strip()
-        if not dept_code and not dept_name:
-            raise ValueError("'department_code' or 'department_name' is required.")
-        if dept_code:
-            department, _ = Department.objects.get_or_create(
-                code=dept_code, defaults={"name": dept_name or dept_code}
-            )
-        else:
-            department, _ = Department.objects.get_or_create(
-                name=dept_name, defaults={"code": dept_name[:32]}
-            )
-        return department
+        existing_after = Product.objects.filter(product_code__in=codes).count()
+        created = existing_after - existing_before
+        skipped = len(codes) - created
+        return created, 0, skipped, errors

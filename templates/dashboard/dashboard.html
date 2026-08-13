@@ -69,18 +69,18 @@
                     <table class="table table-hover mb-0" id="recentSalesTable">
                         <thead>
                             <tr>
-                                <th>Product</th><th>Branch</th><th>Admin</th>
+                                <th>Product Code</th><th>Branch</th><th>Admin</th>
                                 <th class="text-end">Qty</th><th class="text-end">Value</th><th>Period</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for sale in recent_sales %}
                             <tr>
-                                <td>{{ sale.product.name }}</td>
+                                <td>{{ sale.product_code.product_code }}</td>
                                 <td>{{ sale.branch.name }}</td>
                                 <td>{{ sale.admin.full_name }}</td>
-                                <td class="text-end">{{ sale.sales_quantity }}</td>
-                                <td class="text-end">{{ sale.sales_value|floatformat:2 }}</td>
+                                <td class="text-end">{{ sale.total_sales_qty }}</td>
+                                <td class="text-end">{{ sale.total_sales_amt|floatformat:2 }}</td>
                                 <td>{{ sale.start_date }} – {{ sale.end_date }}</td>
                             </tr>
                         {% empty %}
