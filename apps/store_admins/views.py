@@ -2,7 +2,8 @@ import logging
 import pandas as pd
 
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import CharField, Q, Value
+from django.db.models.functions import Concat, Trim
 from django.urls import reverse_lazy
 from django.views.generic import ListView
 from django.views.generic.edit import CreateView, UpdateView
@@ -65,11 +66,12 @@ class StoreAdminDeleteView(ObjectDeleteView):
 
 
 class StoreAdminExcelUploadView(ExcelUploadView):
-    """Two columns expected: "Admin" (the user's email - the account must
-    already exist, created via the admin panel) and "Branch" (a branch
-    name that already exists in the Branches module). One row per
-    admin+branch pairing - if the same admin manages several branches,
-    give them one row per branch; they're aggregated automatically.
+    """Two columns expected: "Admin" (the user's full name, treated as a
+    unique identifier - the account must already exist, created via the
+    admin panel) and "Branch" (a branch name that already exists in the
+    Branches module). One row per admin+branch pairing - if the same
+    admin manages several branches, give them one row per branch;
+    they're aggregated automatically.
 
     Existence is checked by the linked user before inserting - a user who
     already has a Store Admin record is skipped rather than duplicated
@@ -80,14 +82,15 @@ class StoreAdminExcelUploadView(ExcelUploadView):
     success_url = reverse_lazy("store_admins:list")
     entity_label = "store admins"
     upload_title = "Bulk Upload Store Admins"
-    expected_columns = ["Admin (email)", "Branch"]
+    expected_columns = ["Admin", "Branch"]
 
     def process_chunk(self, chunk_df: pd.DataFrame):
         if "admin" not in chunk_df.columns or "branch" not in chunk_df.columns:
             return 0, 0, 0, ["The uploaded file must have 'Admin' and 'Branch' columns."]
 
+        chunk_df = chunk_df.dropna(subset=["admin", "branch"], how="all")
         pairs = chunk_df[["admin", "branch"]].copy()
-        pairs["admin"] = pairs["admin"].astype(str).str.strip().str.lower()
+        pairs["admin"] = pairs["admin"].astype(str).str.strip()
         pairs["branch"] = pairs["branch"].astype(str).str.strip()
 
         blank_mask = (pairs["admin"] == "") | (pairs["branch"] == "")
@@ -104,23 +107,30 @@ class StoreAdminExcelUploadView(ExcelUploadView):
         # One admin -> many branches within this chunk, aggregated via groupby (vectorized).
         grouped = pairs.groupby("admin")["branch"].apply(lambda s: sorted(set(s))).to_dict()
 
-        emails = list(grouped.keys())
-        user_map = {u.email.lower(): u for u in User.objects.filter(email__in=emails)}
-        missing_emails = sorted(set(emails) - set(user_map.keys()))
-        for email in missing_emails:
-            errors.append(f"No user found with email '{email}'. Create the user in the admin panel first.")
+        names = list(grouped.keys())
+        # Full name is first_name + " " + last_name, trimmed - matched against the
+        # stripped "Admin" column value. Treated as unique per this upload's requirements.
+        user_map = {
+            u.full_name: u
+            for u in User.objects.annotate(
+                full_name=Trim(Concat("first_name", Value(" "), "last_name", output_field=CharField()))
+            ).filter(full_name__in=names)
+        }
+        missing_names = sorted(set(names) - set(user_map.keys()))
+        for name in missing_names:
+            errors.append(f"No user found with full name '{name}'. Create the user in the admin panel first.")
 
-        resolvable = {email: branches for email, branches in grouped.items() if email in user_map}
+        resolvable = {name: branches for name, branches in grouped.items() if name in user_map}
         if not resolvable:
             return 0, 0, 0, errors
 
-        user_ids = [user_map[email].id for email in resolvable]
+        user_ids = [user_map[name].id for name in resolvable]
         existing_before = set(StoreAdmin.objects.filter(user_id__in=user_ids).values_list("user_id", flat=True))
 
         to_create = [
-            StoreAdmin(user=user_map[email], is_active=True)
-            for email in resolvable
-            if user_map[email].id not in existing_before
+            StoreAdmin(user=user_map[name], is_active=True)
+            for name in resolvable
+            if user_map[name].id not in existing_before
         ]
         StoreAdmin.objects.bulk_create(to_create, batch_size=self.chunk_size, ignore_conflicts=True)
 
@@ -136,8 +146,8 @@ class StoreAdminExcelUploadView(ExcelUploadView):
             errors.append(f"Unknown branch name(s), so not attached to any admin: {', '.join(missing_branch_names)}.")
 
         through_rows = []
-        for email, branches in resolvable.items():
-            admin = admin_by_user_id.get(user_map[email].id)
+        for name, branches in resolvable.items():
+            admin = admin_by_user_id.get(user_map[name].id)
             if not admin:
                 continue
             for branch_name in branches:

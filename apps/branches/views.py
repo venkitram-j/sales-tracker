@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -71,10 +72,11 @@ class BranchExcelUploadView(ExcelUploadView):
     upload_title = "Bulk Upload Branches"
     expected_columns = ["Branch"]
 
-    def process_chunk(self, chunk_df):
+    def process_chunk(self, chunk_df: pd.DataFrame):
         if "branch" not in chunk_df.columns:
             return 0, 0, 0, ["The uploaded file must have a 'Branch' column."]
 
+        chunk_df = chunk_df.dropna(subset=["branch"], how="all")
         names = chunk_df["branch"].astype(str).str.strip()
         blank_count = int((names == "").sum() + names.isna().sum())
         names = names[(names != "") & names.notna()].drop_duplicates(keep="last")

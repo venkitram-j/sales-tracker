@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -79,12 +80,13 @@ class ProductExcelUploadView(ExcelUploadView):
     upload_title = "Bulk Upload Products"
     expected_columns = ["Product Code", "Description", "Department"]
 
-    def process_chunk(self, chunk_df):
+    def process_chunk(self, chunk_df: pd.DataFrame):
         required = {"product_code", "description", "department"}
         missing_cols = required - set(chunk_df.columns)
         if missing_cols:
             return 0, 0, 0, [f"The uploaded file must have columns: {', '.join(sorted(missing_cols))}."]
 
+        chunk_df = chunk_df.dropna(subset=["product_code", "description", "department"], how="all")
         rows = chunk_df[["product_code", "description", "department"]].copy()
         rows["product_code"] = rows["product_code"].astype(str).str.strip()
         rows["description"] = rows["description"].astype(str).str.strip()

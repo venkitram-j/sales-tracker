@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -71,10 +72,11 @@ class BuyerExcelUploadView(ExcelUploadView):
     upload_title = "Bulk Upload Buyers"
     expected_columns = ["Buyer"]
 
-    def process_chunk(self, chunk_df):
+    def process_chunk(self, chunk_df: pd.DataFrame):
         if "buyer" not in chunk_df.columns:
             return 0, 0, 0, ["The uploaded file must have a 'Buyer' column."]
 
+        chunk_df = chunk_df.dropna(subset=["buyer"], how="all")
         names = chunk_df["buyer"].astype(str).str.strip()
         blank_count = int((names == "").sum() + names.isna().sum())
         names = names[(names != "") & names.notna()].drop_duplicates(keep="last")
