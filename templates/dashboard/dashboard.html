@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h4 class="mb-4">Dashboard</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card bg-quantity">
+            <div class="small text-uppercase opacity-75">Total Units Sold</div>
+            <div class="fs-3 fw-bold">{{ total_quantity }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card bg-value">
+            <div class="small text-uppercase opacity-75">Total Sales Value</div>
+            <div class="fs-3 fw-bold">{{ total_value|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card bg-products">
+            <div class="small text-uppercase opacity-75">Active Products</div>
+            <div class="fs-3 fw-bold">{{ product_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card bg-branches">
+            <div class="small text-uppercase opacity-75">Active Branches</div>
+            <div class="fs-3 fw-bold">{{ branch_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Top Branches by Sales Value</h6>
+                <a href="{% url 'sales_data:branch_wise' %}" class="small">View full report &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>Branch</th><th class="text-end">Qty</th><th class="text-end">Value</th></tr></thead>
+                        <tbody>
+                        {% for row in branch_summary %}
+                            <tr>
+                                <td>{{ row.branch__name }}</td>
+                                <td class="text-end">{{ row.total_quantity }}</td>
+                                <td class="text-end">{{ row.total_value|floatformat:2 }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3" class="text-center text-muted py-4">No sales data yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Recent Sales</h6>
+                <input type="text" id="salesQuickSearch" class="form-control form-control-sm w-auto" placeholder="Quick filter...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="recentSalesTable">
+                        <thead>
+                            <tr>
+                                <th>Product Code</th><th>Branch</th>
+                                <th class="text-end">Qty</th><th class="text-end">Value</th><th>Period</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for sale in recent_sales %}
+                            <tr>
+                                <td>{{ sale.product.product_code }}</td>
+                                <td>{{ sale.branch.name }}</td>
+                                <td class="text-end">{{ sale.total_sales_qty }}</td>
+                                <td class="text-end">{{ sale.total_sales_amt|floatformat:2 }}</td>
+                                <td>{{ sale.start_date }} – {{ sale.end_date }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">No sales data yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var input = document.getElementById("salesQuickSearch");
+    var rows = document.querySelectorAll("#recentSalesTable tbody tr");
+    input.addEventListener("keyup", function () {
+        var term = input.value.toLowerCase();
+        rows.forEach(function (row) {
+            row.style.display = row.textContent.toLowerCase().includes(term) ? "" : "none";
+        });
+    });
+});
+</script>
+{% endblock %}
