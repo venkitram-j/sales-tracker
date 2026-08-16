@@ -26,17 +26,13 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    # "widget_tweaks",
-    # "django_tables2",
+    "widget_tweaks",
+    "django_tables2",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
-    # "apps.core",
-    # "apps.accounts",
-    # "apps.branches",
-    # "apps.products",
-    # "apps.sales_data",
-    # "apps.dashboard",
+    "apps.accounts",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -50,7 +46,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "apps.core.middleware.RequestLoggingMiddleware",
+    # "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -66,7 +62,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "apps.core.context_processors.app_meta",
+                # "apps.core.context_processors.app_meta",
             ],
         },
     },
@@ -90,15 +86,9 @@ DATABASES = {
     }
 }
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+AUTH_USER_MODEL = "accounts.User"
 
-# ---------------------------------------------------------------------------
-# Authentication - email based, username field disabled from user-facing UI
-# ---------------------------------------------------------------------------
-AUTHENTICATION_BACKENDS = [
-    # "apps.accounts.backends.EmailBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "dashboard:home"
