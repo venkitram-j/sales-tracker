@@ -15,9 +15,10 @@ import re
 import unicodedata
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.accounts.models import User
+User = get_user_model()
 
 DEFAULT_DEV_PASSWORD = "DevPass123!"
 
@@ -87,7 +88,7 @@ class Command(BaseCommand):
                 continue
 
             User.objects.create_user(
-                email=email, password=password,
+                username=email, email=email, password=password,
                 first_name=first_name, last_name=last_name,
                 is_staff=is_staff, is_superuser=is_superuser,
             )

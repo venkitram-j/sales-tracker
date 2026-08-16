@@ -1,8 +1,5 @@
 from django import forms
 
-from openpyxl.utils import column_index_from_string
-from openpyxl.utils.exceptions import IllegalCharacterError
-
 
 class BootstrapModelForm(forms.ModelForm):
     """Automatically applies Bootstrap classes to every widget.
@@ -65,6 +62,9 @@ class ExcelUploadForm(forms.Form):
         return uploaded
 
     def clean_start_column(self):
+        from openpyxl.utils import column_index_from_string
+        from openpyxl.utils.exceptions import IllegalCharacterError
+
         raw = self.cleaned_data["start_column"].strip().upper()
         if not raw.isalpha():
             raise forms.ValidationError("Enter a column letter, e.g. A, B or C.")
