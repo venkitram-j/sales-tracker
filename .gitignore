@@ -30,5 +30,3 @@ db.sqlite3-journal
 .coverage
 htmlcov/
 .pytest_cache/
-
-/sales_data/

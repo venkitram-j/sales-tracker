@@ -6,6 +6,20 @@ DEBUG = False
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 # ---------------------------------------------------------------------------
+# Database - typically PostgreSQL in production, configured via env vars
+# ---------------------------------------------------------------------------
+DATABASES["default"].update(  # noqa: F405
+    {
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.postgresql"),
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST", default="localhost"),
+        "PORT": config("DB_PORT", default="5432"),
+    }
+)
+
+# ---------------------------------------------------------------------------
 # Security hardening
 # ---------------------------------------------------------------------------
 SESSION_COOKIE_SECURE = True
@@ -18,6 +32,30 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = "DENY"
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
+
+# ---------------------------------------------------------------------------
+# Logging - rotating file handler + console, no DEBUG-level noise
+# ---------------------------------------------------------------------------
+LOGGING["handlers"]["file"] = {  # noqa: F405
+    "class": "logging.handlers.RotatingFileHandler",
+    "filename": str(LOGS_DIR / "sales_tracker.log"),  # noqa: F405
+    "maxBytes": 10 * 1024 * 1024,  # 10 MB per file
+    "backupCount": 10,
+    "formatter": "verbose",
+}
+LOGGING["handlers"]["error_file"] = {  # noqa: F405
+    "class": "logging.handlers.RotatingFileHandler",
+    "filename": str(LOGS_DIR / "sales_tracker_error.log"),  # noqa: F405
+    "maxBytes": 10 * 1024 * 1024,
+    "backupCount": 10,
+    "level": "ERROR",
+    "formatter": "verbose",
+}
+LOGGING["root"]["handlers"] = ["console", "file"]  # noqa: F405
+LOGGING["root"]["level"] = "INFO"  # noqa: F405
+LOGGING["loggers"]["django"]["handlers"] = ["console", "file", "error_file"]  # noqa: F405
+LOGGING["loggers"]["apps"]["handlers"] = ["console", "file", "error_file"]  # noqa: F405
+LOGGING["loggers"]["apps"]["level"] = "INFO"  # noqa: F405
 
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = config("EMAIL_HOST", default="")

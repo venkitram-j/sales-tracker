@@ -5,6 +5,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
 
+# Console-only, verbose logging for development
+LOGGING["root"]["level"] = "DEBUG"          # noqa: F405
+LOGGING["loggers"]["apps"]["level"] = "DEBUG"  # noqa: F405
+
 INTERNAL_IPS = ["127.0.0.1"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
