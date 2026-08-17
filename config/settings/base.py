@@ -25,9 +25,16 @@ DJANGO_APPS = [
     "django.contrib.humanize",
 ]
 
-THIRD_PARTY_APPS = []
+THIRD_PARTY_APPS = [
+    "widget_tweaks",
+    "django_tables2",
+]
 
-LOCAL_APPS = []
+LOCAL_APPS = [
+    "apps.core",
+    "apps.accounts",
+    "apps.dashboard",
+]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -104,10 +111,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
-}
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -115,7 +118,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 # ---------------------------------------------------------------------------
 # Misc
 # ---------------------------------------------------------------------------
-APP_NAME = config("APP_NAME", default="Sales Tracker")
 
 # Max size (bytes) allowed for excel uploads across the app
 EXCEL_UPLOAD_MAX_SIZE = config("EXCEL_UPLOAD_MAX_SIZE", default=50 * 1024 * 1024, cast=int)

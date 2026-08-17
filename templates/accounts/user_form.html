@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} User - {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">{% if object %}Edit User{% else %}Add New User{% endif %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            {{ form.first_name }}
+                            {% for error in form.first_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                            {% for error in form.last_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email</label>
+                            {{ form.email }}
+                            {% for error in form.email.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+
+                        {% if form.password1 %}
+                        <div class="col-md-6">
+                            <label class="form-label">Password</label>
+                            {{ form.password1 }}
+                            {% for error in form.password1.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Confirm Password</label>
+                            {{ form.password2 }}
+                            {% for error in form.password2.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <div class="alert alert-info py-2 small mb-0">
+                                To change this user's password, use <a href="{% url 'accounts:user_password_reset' object.pk %}">Reset Password</a> instead.
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="col-12">
+                            <label class="form-label">Groups</label>
+                            {% for checkbox in form.groups %}
+                            <div class="form-check">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                            </div>
+                            {% empty %}
+                            <div class="form-text">
+                                No groups exist yet - run <code>python manage.py seed_groups</code> to create the standard Viewer / Branch Manager / Data Administrator groups.
+                            </div>
+                            {% endfor %}
+                            {% if form.groups.help_text %}<div class="form-text">{{ form.groups.help_text }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active</label>
+                        </div>
+                        <div class="col-md-6 form-check">
+                            {{ form.is_staff }}
+                            <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">Staff (can access the Django admin panel)</label>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" data-loading-text="Saving...">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
