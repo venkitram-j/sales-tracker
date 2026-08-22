@@ -1,32 +1,4 @@
-# Core framework
-Django>=5.2,<5.3
-
-# Excel import/export - pandas+calamine does the actual (fast) row reading
-# and all data manipulation is vectorized on the resulting DataFrame;
-# openpyxl is kept only for its column-letter <-> index helper utilities.
-openpyxl>=3.1,<4.0
-pandas>=2.2,<3.0
-python-calamine>=0.8,<1.0
-
-# Environment-based configuration (12-factor)
-python-decouple>=3.8,<4.0
-
-# Static file serving in production (no separate nginx/CDN required)
-whitenoise>=6.12,<7.0
-
-# Production WSGI server
-gunicorn>=26.0,<27.0
-
-# Bootstrap-friendly form widget rendering helpers
-django-widget-tweaks>=1.5,<2.0
-
-# Sortable, paginated HTML tables for every list page (rendered with the
-# bootstrap5 template, combined with HTMX for in-place sort/page/search)
-django-tables2>=2.7,<3.1
-
-# Search/filter forms for every list page (FilterSets), combined with the
-# tables/HTMX above
-django-filter>=24.0,<26.0
-
-# PostgreSQL driver for production (binary wheel, no build toolchain needed)
-psycopg[binary]>=3.2,<4.0
+asgiref==3.12.1
+Django==6.1
+python-dotenv==1.2.3
+sqlparse==0.6.0
