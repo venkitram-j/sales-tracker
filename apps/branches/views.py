@@ -1,14 +1,12 @@
 import logging
 
-from django.db.models import Q
 from django.urls import reverse_lazy
-from django.views.generic import ListView
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import SingleTableMixin
 
-from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, ObjectDeleteView, SuccessMessageMixin
+from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, FilteredTableListView, ObjectDeleteView, SuccessMessageMixin
 from apps.core.utils import normalize_text
 
+from .filters import BranchFilter
 from .forms import BranchForm
 from .models import Branch
 from .tables import BranchTable
@@ -16,26 +14,12 @@ from .tables import BranchTable
 logger = logging.getLogger("apps.branches")
 
 
-class BranchListView(SingleTableMixin, CrudPermissionMixin, ListView):
+class BranchListView(FilteredTableListView):
     model = Branch
     permission_required = "branches.view_branch"
     template_name = "branches/list.html"
     table_class = BranchTable
-
-    def get_queryset(self):
-        qs = Branch.objects.all()
-        q = self.request.GET.get("q", "").strip()
-        if q:
-            qs = qs.filter(Q(name__icontains=q))
-        return qs
-
-    def get_table_kwargs(self):
-        return {"request": self.request}
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["search_query"] = self.request.GET.get("q", "")
-        return ctx
+    filterset_class = BranchFilter
 
 
 class BranchCreateView(CrudPermissionMixin, SuccessMessageMixin, CreateView):
@@ -66,8 +50,8 @@ class BranchDeleteView(ObjectDeleteView):
 class BranchExcelUploadView(ExcelUploadView):
     """Single-column upload: the file's only expected column is "Branch"
     (matching the model name). Existing branches (matched by name) are
-    skipped rather than duplicated - see DepartmentExcelUploadView for the
-    identical Postgres-native skip-existing pattern.
+    skipped rather than duplicated, via a single Postgres-native
+    `INSERT ... ON CONFLICT DO NOTHING` per chunk.
     """
 
     permission_required = "branches.add_branch"

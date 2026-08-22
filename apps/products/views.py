@@ -1,16 +1,14 @@
 import logging
+import pandas as pd
 
 from django.contrib.auth import get_user_model
-from django.db.models import CharField, Q, Value
-from django.db.models.functions import Concat, Trim
 from django.urls import reverse_lazy
-from django.views.generic import ListView
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import SingleTableMixin
 
-from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, ObjectDeleteView, SuccessMessageMixin
+from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, FilteredTableListView, ObjectDeleteView, SuccessMessageMixin
 from apps.core.utils import normalize_text
 
+from .filters import ProductFilter
 from .forms import ProductForm
 from .models import Product
 from .tables import ProductTable
@@ -19,28 +17,15 @@ logger = logging.getLogger("apps.products")
 User = get_user_model()
 
 
-class ProductListView(SingleTableMixin, CrudPermissionMixin, ListView):
+class ProductListView(FilteredTableListView):
     model = Product
     permission_required = "products.view_product"
     template_name = "products/list.html"
     table_class = ProductTable
+    filterset_class = ProductFilter
 
-    def get_queryset(self):
-        qs = Product.objects.select_related("admin", "buyer")
-        q = self.request.GET.get("q", "").strip()
-        if q:
-            qs = qs.filter(
-                Q(product_code__icontains=q) | Q(description__icontains=q) | Q(department__icontains=q)
-            )
-        return qs
-
-    def get_table_kwargs(self):
-        return {"request": self.request}
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["search_query"] = self.request.GET.get("q", "")
-        return ctx
+    def get_base_queryset(self):
+        return Product.objects.select_related("admin", "buyer")
 
 
 class ProductCreateView(CrudPermissionMixin, SuccessMessageMixin, CreateView):
@@ -86,11 +71,11 @@ class ProductExcelUploadView(ExcelUploadView):
     success_url = reverse_lazy("products:list")
     entity_label = "products"
     upload_title = "Bulk Upload Products"
-    expected_columns = ["Product Code", "Description", "Department", "Admin (full name)", "Buyer (full name)"]
+    expected_columns = ["Product Code", "Description", "Department", "Admin", "Buyer"]
 
     REQUIRED_COLUMNS = {"product_code", "description", "department", "admin", "buyer"}
 
-    def process_chunk(self, chunk_df):
+    def process_chunk(self, chunk_df: pd.DataFrame):
         missing_cols = self.REQUIRED_COLUMNS - set(chunk_df.columns)
         if missing_cols:
             return 0, 0, 0, [f"The uploaded file must have columns: {', '.join(sorted(missing_cols))}."]
@@ -113,14 +98,11 @@ class ProductExcelUploadView(ExcelUploadView):
         # De-duplicate within this chunk, keeping the last occurrence of a product_code.
         rows = rows.drop_duplicates(subset="product_code", keep="last")
 
-        # --- Resolve Admin/Buyer by full name (must already exist) --------
+        # --- Resolve Admin/Buyer by full name (must already exist; one
+        # person can be both admin and buyer for the same product - a
+        # plain dict lookup handles that naturally) -----------------------
         full_names = set(rows["admin"].unique()) | set(rows["buyer"].unique())
-        user_map = {
-            u.full_name: u
-            for u in User.objects.annotate(
-                full_name=Trim(Concat("first_name", Value(" "), "last_name", output_field=CharField()))
-            ).filter(full_name__in=full_names)
-        }
+        user_map = {u.full_name: u for u in User.objects.filter(full_name__in=full_names)}
         missing_names = sorted(full_names - set(user_map.keys()))
         if missing_names:
             errors.append(

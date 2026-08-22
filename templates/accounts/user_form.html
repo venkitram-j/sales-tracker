@@ -47,28 +47,20 @@
                         </div>
                         {% endif %}
 
-                        <div class="col-12">
-                            <label class="form-label">Groups</label>
-                            {% for checkbox in form.groups %}
-                            <div class="form-check">
-                                {{ checkbox.tag }}
-                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
-                            </div>
-                            {% empty %}
-                            <div class="form-text">
-                                No groups exist yet - run <code>python manage.py seed_groups</code> to create the standard Viewer / Branch Manager / Data Administrator groups.
-                            </div>
-                            {% endfor %}
-                            {% if form.groups.help_text %}<div class="form-text">{{ form.groups.help_text }}</div>{% endif %}
-                        </div>
-
                         <div class="col-md-6 form-check">
                             {{ form.is_active }}
                             <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active</label>
                         </div>
                         <div class="col-md-6 form-check">
                             {{ form.is_staff }}
-                            <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">Staff (can access the Django admin panel)</label>
+                            <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                                Staff - can also manage users (add, edit, reset passwords) and access the Django admin panel
+                            </label>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-text">
+                                Every user (staff or not) can view, add, edit and delete Branches, Products and Sales Data.
+                            </div>
                         </div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-4">

@@ -3,7 +3,7 @@ Base settings shared by all environments.
 Environment-specific overrides live in development.py / production.py.
 """
 from pathlib import Path
-from decouple import config, Csv
+from decouple import config
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -28,6 +28,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "widget_tweaks",
     "django_tables2",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
@@ -93,8 +94,11 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
-# Authentication - email based, username field disabled from user-facing UI
+# Authentication - custom User model (adds full_name), email based login,
+# username field disabled from user-facing UI
 # ---------------------------------------------------------------------------
+AUTH_USER_MODEL = "accounts.User"
+
 AUTHENTICATION_BACKENDS = [
     "apps.accounts.backends.EmailBackend",
     "django.contrib.auth.backends.ModelBackend",

@@ -24,5 +24,9 @@ django-widget-tweaks>=1.5,<2.0
 # bootstrap5 template, combined with HTMX for in-place sort/page/search)
 django-tables2>=2.7,<3.1
 
+# Search/filter forms for every list page (FilterSets), combined with the
+# tables/HTMX above
+django-filter>=24.0,<26.0
+
 # PostgreSQL driver for production (binary wheel, no build toolchain needed)
 psycopg[binary]>=3.2,<4.0

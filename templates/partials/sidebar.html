@@ -1,6 +1,6 @@
 {% load static %}
 <aside class="app-sidebar" id="appSidebar">
-    <nav class="nav flex-column p-3">
+    <nav class="nav flex-column p-3 sidebar-scroll">
         <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}"
            href="{% url 'dashboard:home' %}">
             <i class="bi bi-speedometer2"></i> Dashboard
@@ -31,7 +31,7 @@
         </a>
         {% endif %}
 
-        {% if perms.auth.view_user %}
+        {% if perms.accounts.view_user %}
         <hr class="text-white-50">
         <a class="nav-link sidebar-link d-flex justify-content-between align-items-center" href="#manageUsersMenu"
            data-bs-toggle="collapse" role="button"
@@ -41,7 +41,7 @@
             <i class="bi bi-chevron-down small"></i>
         </a>
         <div class="collapse {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'logout' %}show{% endif %}" id="manageUsersMenu">
-            {% if perms.auth.add_user %}
+            {% if perms.accounts.add_user %}
             <a class="nav-link sidebar-link ps-4 small {% if request.resolver_match.url_name == 'user_add' %}active{% endif %}"
                href="{% url 'accounts:user_add' %}">
                 <i class="bi bi-person-plus"></i> Add New User
@@ -54,4 +54,13 @@
         </div>
         {% endif %}
     </nav>
+
+    <div class="sidebar-footer p-3">
+        <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link sidebar-link w-100 text-start border-0 bg-transparent">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </form>
+    </div>
 </aside>

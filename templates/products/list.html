@@ -14,11 +14,7 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-white">
-        <form method="get"
-              hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true"
-              hx-trigger="keyup changed delay:400ms from:find input[name='q'], submit" data-no-disable="true">
-            <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by product code, description or department...">
-        </form>
+        {% include "partials/filter_form.html" %}
     </div>
     <div id="results" hx-boost="true" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">
         <div class="table-responsive">

@@ -14,7 +14,7 @@ class ProductForm(BootstrapModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        user_qs = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+        user_qs = User.objects.filter(is_active=True).order_by("full_name")
         for field_name in ("admin", "buyer"):
             self.fields[field_name].queryset = user_qs
-            self.fields[field_name].label_from_instance = lambda u: u.get_full_name() or u.email
+            self.fields[field_name].label_from_instance = lambda u: u.full_name or u.email

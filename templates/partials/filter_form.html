@@ -1,0 +1,15 @@
+<form method="get"
+      hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true"
+      hx-trigger="keyup changed delay:400ms from:find input[type='text'], change from:find select, change from:find input[type='date'], submit"
+      data-no-disable="true" class="row g-2 align-items-end">
+    {% for field in filter.form %}
+    <div class="col-auto {% if field.name == 'q' %}flex-grow-1{% endif %}">
+        {% if field.label and field.name != "q" %}<label class="form-label small mb-1">{{ field.label }}</label>{% endif %}
+        {{ field }}
+    </div>
+    {% endfor %}
+    <div class="col-auto">
+        <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"
+           hx-get="{{ request.path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">Clear</a>
+    </div>
+</form>

@@ -1,13 +1,14 @@
 import logging
 
-from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.urls import reverse_lazy
+from django.db.models import ProtectedError
 from django.shortcuts import redirect
-from django.views.generic import View
+from django.urls import reverse_lazy
+from django.views.generic import ListView, View
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
+from django_tables2 import SingleTableMixin
 
 from apps.core.forms import ExcelUploadForm
 from apps.core.utils import ExcelParseError, build_data_frame, chunk_dataframe, load_excel
@@ -37,9 +38,11 @@ class CrudPermissionMixin(AppLoginRequiredMixin, PermissionRequiredMixin):
     """Combines login + Django's built-in permission framework.
 
     `permission_required` should be set on each concrete view, e.g.
-    "products.add_product". Superusers and users holding the permission
-    (directly or via a Group) pass automatically - this is native
-    django.contrib.auth behaviour, nothing custom is implemented.
+    "products.add_product". Superusers, and any user holding the
+    permission directly, pass automatically - this is native
+    django.contrib.auth behaviour, nothing custom is implemented. Every
+    user's permissions are kept in sync with their is_staff flag by
+    apps.accounts.signals.sync_user_permissions.
     """
 
     raise_exception = False  # redirected to login, or show 403 if authenticated but lacking perms
@@ -47,13 +50,38 @@ class CrudPermissionMixin(AppLoginRequiredMixin, PermissionRequiredMixin):
     def handle_no_permission(self):
         if self.request.user.is_authenticated:
             messages.error(self.request, "You do not have permission to perform this action.")
-            from django.shortcuts import redirect
-
             return redirect(self.get_permission_denied_redirect())
         return super().handle_no_permission()
 
     def get_permission_denied_redirect(self):
         return reverse_lazy("dashboard:home")
+
+
+class FilteredTableListView(SingleTableMixin, CrudPermissionMixin, ListView):
+    """Base for every list page: a django-filter FilterSet drives the
+    search/filter form, a django-tables2 table drives sortable, paginated
+    display. Subclasses set `model`, `table_class`, `filterset_class`,
+    `template_name`, `permission_required`, and override `get_base_queryset()`
+    (not `get_queryset()`) for any custom starting queryset (e.g.
+    `select_related`) - filtering is applied on top of that automatically.
+    """
+
+    filterset_class = None
+
+    def get_base_queryset(self):
+        return super().get_queryset()
+
+    def get_queryset(self):
+        self.filterset = self.filterset_class(self.request.GET, queryset=self.get_base_queryset(), request=self.request)
+        return self.filterset.qs
+
+    def get_table_kwargs(self):
+        return {"request": self.request}
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["filter"] = self.filterset
+        return ctx
 
 
 class ExcelUploadView(CrudPermissionMixin, FormView):
@@ -73,12 +101,12 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
     Subclasses implement:
 
     - `process_chunk(chunk_df)`: given a DataFrame slice of up to
-      `chunk_size` rows (indexed by their original Excel row number),
-      validate/resolve/write it to the database - typically via a bulk
-      existence check followed by `bulk_create`/`bulk_create(...,
-      update_conflicts=True)` - and return (created_count, updated_count,
-      skipped_count, errors), where `errors` is a list of human-readable
-      strings for any rows that couldn't be applied.
+      `chunk_size` rows, validate/resolve/write it to the database -
+      typically via a bulk existence check followed by `bulk_create`/
+      `bulk_create(..., update_conflicts=True)` - and return
+      (created_count, updated_count, skipped_count, errors), where
+      `errors` is a list of human-readable strings for any rows that
+      couldn't be applied.
     """
 
     form_class = ExcelUploadForm
@@ -87,7 +115,6 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
     upload_title = "Bulk Upload"
     expected_columns = []
     upload_help_text = ""
-    list_url_name = ""
     chunk_size = 5000
 
     def get_context_data(self, **kwargs):
@@ -126,6 +153,10 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
         """Must return (created_count, updated_count, skipped_count, errors)."""
         raise NotImplementedError
 
+    def _fail(self, form, message):
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
     def form_valid(self, form):
         uploaded_file = form.cleaned_data["excel_file"]
         header_row = form.cleaned_data["header_row"]
@@ -134,20 +165,17 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
         try:
             raw_df = load_excel(uploaded_file)
         except ExcelParseError as exc:
-            messages.error(self.request, str(exc))
-            return self.render_to_response(self.get_context_data(form=form))
+            return self._fail(form, str(exc))
 
         try:
             self.before_rows(form, raw_df, header_row)
         except ValueError as exc:
-            messages.error(self.request, str(exc))
-            return self.render_to_response(self.get_context_data(form=form))
+            return self._fail(form, str(exc))
 
         try:
             data = self.build_dataframe(raw_df, header_row=header_row, start_col=start_col)
         except ExcelParseError as exc:
-            messages.error(self.request, str(exc))
-            return self.render_to_response(self.get_context_data(form=form))
+            return self._fail(form, str(exc))
 
         created = updated = skipped = 0
         errors = []
@@ -184,11 +212,6 @@ class ExcelUploadView(CrudPermissionMixin, FormView):
                 "No data rows were found. Double-check the Header Row and Start Column settings against your file.",
             )
 
-        return self.redirect_after_upload()
-
-    def redirect_after_upload(self):
-        from django.shortcuts import redirect
-
         return redirect(self.success_url)
 
     def form_invalid(self, form):
@@ -205,8 +228,6 @@ class ObjectDeleteView(CrudPermissionMixin, SingleObjectMixin, View):
     success_message = "Record deleted successfully."
 
     def post(self, request, *args, **kwargs):
-        from django.db.models import ProtectedError
-
         obj = self.get_object()
         obj_repr = str(obj)
         try:
@@ -226,9 +247,3 @@ class ObjectDeleteView(CrudPermissionMixin, SingleObjectMixin, View):
     def get(self, request, *args, **kwargs):
         # Deletion must always be confirmed via modal + POST.
         return redirect(self.success_url)
-
-
-class BootstrapButtonMixin:
-    """No-op marker mixin kept for template convention; buttons are styled in templates."""
-
-    pass

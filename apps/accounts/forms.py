@@ -2,7 +2,6 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AdminPasswordChangeForm as DjangoAdminPasswordChangeForm
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
@@ -43,32 +42,22 @@ class EmailAuthenticationForm(AuthenticationForm):
 
 
 class UserManageFormBase(forms.ModelForm):
-    """Shared base for the create/update user forms: Bootstrap styling plus
-    a Groups checkbox list sourced live from whatever Groups exist (the
-    three created by `python manage.py seed_groups` - Viewer, Branch
-    Manager, Data Administrator - show up here automatically once seeded,
-    same as any other Group).
+    """Shared base for the create/update user forms: Bootstrap styling, plus
+    email-uniqueness validation. Permissions are not chosen here at all -
+    they're derived automatically from `is_staff` (see
+    apps.accounts.signals.sync_user_permissions); this form only decides
+    the flag itself.
     """
-
-    groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all().order_by("name"),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        help_text="Determines what this user can see and do - see the Permissions section of the README.",
-    )
 
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name", "is_active", "is_staff", "groups"]
+        fields = ["email", "first_name", "last_name", "is_active", "is_staff"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             widget = field.widget
-            if isinstance(widget, (forms.CheckboxInput, forms.CheckboxSelectMultiple)):
-                widget.attrs["class"] = "form-check-input"
-            else:
-                widget.attrs["class"] = "form-control"
+            widget.attrs["class"] = "form-check-input" if isinstance(widget, forms.CheckboxInput) else "form-control"
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
@@ -88,7 +77,7 @@ class UserCreateForm(UserManageFormBase):
         label="Confirm Password", strip=False, widget=forms.PasswordInput(attrs={"class": "form-control"}),
     )
 
-    field_order = ["email", "first_name", "last_name", "password1", "password2", "is_active", "is_staff", "groups"]
+    field_order = ["email", "first_name", "last_name", "password1", "password2", "is_staff", "is_active"]
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -101,11 +90,9 @@ class UserCreateForm(UserManageFormBase):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.username = user.email
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
-            self.save_m2m()
         return user
 
 

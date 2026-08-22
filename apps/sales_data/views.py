@@ -3,15 +3,14 @@ import logging
 import pandas as pd
 from django.db.models import Sum, Count
 from django.urls import reverse_lazy
-from django.views.generic import ListView
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import SingleTableMixin
 
 from apps.branches.models import Branch
-from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, ObjectDeleteView, SuccessMessageMixin
+from apps.core.mixins import CrudPermissionMixin, ExcelUploadView, FilteredTableListView, ObjectDeleteView, SuccessMessageMixin
 from apps.core.utils import ExcelParseError, extract_pre_header_row_texts, normalize_text
 from apps.products.models import Product
 
+from .filters import SalesDataFilter
 from .forms import SalesDataForm
 from .models import SalesData
 from .report_period import parse_report_period
@@ -20,73 +19,41 @@ from .tables import SalesDataBranchWiseTable, SalesDataTable
 logger = logging.getLogger("apps.sales_data")
 
 
-class SalesDataFilterMixin:
-    """Shared query-param filtering used by both the raw list and the branch-wise report."""
-
-    def filter_queryset(self, qs):
-        request = self.request
-        branch_id = request.GET.get("branch")
-        product_id = request.GET.get("product")
-        date_from = request.GET.get("date_from")
-        date_to = request.GET.get("date_to")
-
-        if branch_id:
-            qs = qs.filter(branch_id=branch_id)
-        if product_id:
-            qs = qs.filter(product_id=product_id)
-        if date_from:
-            qs = qs.filter(start_date__gte=date_from)
-        if date_to:
-            qs = qs.filter(end_date__lte=date_to)
-        return qs
-
-    def get_filter_context(self):
-        return {
-            "branches": Branch.objects.filter(is_active=True).order_by("name"),
-            "products": Product.objects.filter(is_active=True).order_by("product_code"),
-            "selected_branch": self.request.GET.get("branch", ""),
-            "selected_product": self.request.GET.get("product", ""),
-            "date_from": self.request.GET.get("date_from", ""),
-            "date_to": self.request.GET.get("date_to", ""),
-        }
-
-
-class SalesDataListView(SalesDataFilterMixin, SingleTableMixin, CrudPermissionMixin, ListView):
+class SalesDataListView(FilteredTableListView):
     """Raw, row-level sales records with full CRUD entry points."""
 
     model = SalesData
     permission_required = "sales_data.view_salesdata"
     template_name = "sales_data/list.html"
     table_class = SalesDataTable
+    filterset_class = SalesDataFilter
 
-    def get_queryset(self):
-        qs = SalesData.objects.select_related("product", "branch")
-        return self.filter_queryset(qs)
-
-    def get_table_kwargs(self):
-        return {"request": self.request}
+    def get_base_queryset(self):
+        return SalesData.objects.select_related("product", "branch")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update(self.get_filter_context())
-        totals = self.get_queryset().aggregate(total_qty=Sum("total_sales_qty"), total_value=Sum("total_sales_amt"))
+        totals = self.filterset.qs.aggregate(total_qty=Sum("total_sales_qty"), total_value=Sum("total_sales_amt"))
         ctx["total_qty"] = totals["total_qty"] or 0
         ctx["total_value"] = totals["total_value"] or 0
         return ctx
 
 
-class SalesDataBranchWiseView(SalesDataFilterMixin, SingleTableMixin, CrudPermissionMixin, ListView):
+class SalesDataBranchWiseView(FilteredTableListView):
     """Branch-wise aggregated view: totals per branch + product combination."""
 
+    model = SalesData
     permission_required = "sales_data.view_salesdata"
     template_name = "sales_data/branch_wise.html"
     table_class = SalesDataBranchWiseTable
+    filterset_class = SalesDataFilter
 
-    def get_queryset(self):
-        qs = SalesData.objects.select_related("product", "branch")
-        qs = self.filter_queryset(qs)
-        return (
-            qs.values("branch__name", "product__product_code", "product__description")
+    def get_base_queryset(self):
+        return SalesData.objects.select_related("product", "branch")
+
+    def get_table_data(self):
+        rows = (
+            self.filterset.qs.values("branch__name", "product__product_code", "product__description")
             .annotate(
                 total_quantity=Sum("total_sales_qty"),
                 total_value=Sum("total_sales_amt"),
@@ -95,8 +62,6 @@ class SalesDataBranchWiseView(SalesDataFilterMixin, SingleTableMixin, CrudPermis
             )
             .order_by("branch__name", "product__product_code")
         )
-
-    def get_table_data(self):
         return [
             {
                 "branch": row["branch__name"],
@@ -107,16 +72,8 @@ class SalesDataBranchWiseView(SalesDataFilterMixin, SingleTableMixin, CrudPermis
                 "total_value": row["total_value"],
                 "total_stock": row["total_stock"],
             }
-            for row in self.get_queryset()
+            for row in rows
         ]
-
-    def get_table_kwargs(self):
-        return {"request": self.request}
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx.update(self.get_filter_context())
-        return ctx
 
 
 class SalesDataCreateView(CrudPermissionMixin, SuccessMessageMixin, CreateView):
@@ -193,7 +150,7 @@ class SalesDataExcelUploadView(ExcelUploadView):
         "branch within this period is replaced with the new values; otherwise a new record is created."
     )
 
-    def before_rows(self, form, raw_df, header_row):
+    def before_rows(self, form, raw_df: pd.DataFrame, header_row):
         texts = extract_pre_header_row_texts(raw_df, header_row)
         start_date, end_date = parse_report_period(texts)
         if not start_date or not end_date:
@@ -204,7 +161,7 @@ class SalesDataExcelUploadView(ExcelUploadView):
         self._start_date = start_date
         self._end_date = end_date
 
-    def build_dataframe(self, raw_df, header_row, start_col):
+    def build_dataframe(self, raw_df: pd.DataFrame, header_row, start_col):
         header_idx = header_row - 1
         branch_row_idx = header_idx - 1
         col_start_idx = start_col - 1
@@ -274,7 +231,7 @@ class SalesDataExcelUploadView(ExcelUploadView):
         long_df.index = long_df.index + 1
         return long_df
 
-    def process_chunk(self, chunk_df):
+    def process_chunk(self, chunk_df: pd.DataFrame):
         required = {"product_code", "branch", "total_sales_qty", "total_sales_amt", "total_stock"}
         missing_cols = required - set(chunk_df.columns)
         if missing_cols:

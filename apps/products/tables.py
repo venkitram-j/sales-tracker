@@ -8,6 +8,8 @@ from .models import Product
 
 
 class ProductTable(BaseTable):
+    admin = tables.Column(order_by=("admin__full_name",))
+    buyer = tables.Column(order_by=("buyer__full_name",))
     is_active = tables.Column(verbose_name="Status")
     actions = tables.Column(empty_values=(), orderable=False, verbose_name="")
 
@@ -19,10 +21,10 @@ class ProductTable(BaseTable):
         template_name = "django_tables2/bootstrap5.html"
 
     def render_admin(self, value):
-        return value.get_full_name() or value.email
+        return value.full_name or value.email
 
     def render_buyer(self, value):
-        return value.get_full_name() or value.email
+        return value.full_name or value.email
 
     def render_is_active(self, value):
         if value:

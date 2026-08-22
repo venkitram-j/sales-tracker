@@ -37,7 +37,21 @@ body {
     top: var(--topbar-height);
     align-self: flex-start;
     height: calc(100vh - var(--topbar-height));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Only the nav links scroll; the logout footer below stays fixed in place. */
+.sidebar-scroll {
+    flex: 1 1 auto;
     overflow-y: auto;
+    min-height: 0;
+}
+
+.sidebar-footer {
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .app-content {
@@ -93,16 +107,20 @@ body {
 /* ---------------- Auth page ---------------- */
 .auth-wrapper {
     min-height: 100vh;
+    min-height: 100dvh; /* accounts for mobile browsers' dynamic toolbar - 100vh alone can clip/shift content there */
     display: flex;
     align-items: center;
+    align-items: safe center; /* keeps the card fully reachable (never clipped above the fold) if its content grows taller than the viewport, e.g. when an error alert appears */
     justify-content: center;
     background: linear-gradient(135deg, var(--brand-dark), #2d3a5c);
+    padding: 2rem 1rem; /* breathing room so the card never sits flush against the viewport edge as it grows */
 }
 
 .auth-card {
     max-width: 420px;
     width: 100%;
     border-radius: 0.75rem;
+    margin: auto; /* keeps the card centered even when auth-wrapper's own height grows beyond the viewport */
 }
 
 /* ---------------- Responsive sidebar ---------------- */
