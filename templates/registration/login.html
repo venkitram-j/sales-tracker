@@ -1,155 +1,42 @@
 {% extends "base.html" %}
-
-{% block title %}Log in | {% endblock %}
-
-{% block extra_css %}
-	<style>
-		:root {
-			--login-ink: #17212b;
-			--login-muted: #667482;
-			--login-border: #d9e1e8;
-			--login-accent: #1769aa;
-			--login-accent-dark: #0f4f83;
-			--login-error: #a33a3a;
-			--login-error-bg: #fff1f1;
-		}
-
-		.login-page {
-			min-height: 100vh;
-			display: grid;
-			place-items: center;
-			padding: 2rem 1rem;
-			color: var(--login-ink);
-			background: linear-gradient(135deg, #f4f8fb 0%, #e8f0f6 100%);
-		}
-
-		.login-panel {
-			width: min(100%, 26rem);
-			padding: clamp(1.75rem, 5vw, 2.75rem);
-			background: #ffffff;
-			border: 1px solid rgba(23, 33, 43, 0.08);
-			border-radius: 0.75rem;
-			box-shadow: 0 1rem 2.5rem rgba(23, 33, 43, 0.12);
-		}
-
-		.login-heading {
-			margin: 0;
-			font-size: 1.75rem;
-			font-weight: 650;
-			letter-spacing: 0;
-		}
-
-		.login-intro {
-			margin: 0.5rem 0 1.75rem;
-			color: var(--login-muted);
-		}
-
-		.login-form {
-			display: grid;
-			gap: 1.1rem;
-		}
-
-		.login-field {
-			display: grid;
-			gap: 0.4rem;
-		}
-
-		.login-field label {
-			font-size: 0.9rem;
-			font-weight: 600;
-		}
-
-		.login-field input {
-			width: 100%;
-			box-sizing: border-box;
-			padding: 0.7rem 0.8rem;
-			color: var(--login-ink);
-			background: #ffffff;
-			border: 1px solid var(--login-border);
-			border-radius: 0.4rem;
-			font: inherit;
-			transition: border-color 150ms ease, box-shadow 150ms ease;
-		}
-
-		.login-field input:focus {
-			outline: none;
-			border-color: var(--login-accent);
-			box-shadow: 0 0 0 0.2rem rgba(23, 105, 170, 0.16);
-		}
-
-		.login-error {
-			margin: 0;
-			padding: 0.7rem 0.8rem;
-			color: var(--login-error);
-			background: var(--login-error-bg);
-			border: 1px solid #f0caca;
-			border-radius: 0.4rem;
-			font-size: 0.875rem;
-		}
-
-		.login-error ul {
-			margin: 0;
-			padding-left: 1.1rem;
-		}
-
-		.login-submit {
-			width: 100%;
-			margin-top: 0.25rem;
-			padding: 0.75rem 1rem;
-			color: #ffffff;
-			background: var(--login-accent);
-			border: 0;
-			border-radius: 0.4rem;
-			font: inherit;
-			font-weight: 600;
-			cursor: pointer;
-			transition: background-color 150ms ease, transform 150ms ease;
-		}
-
-		.login-submit:hover {
-			background: var(--login-accent-dark);
-		}
-
-		.login-submit:active {
-			transform: translateY(1px);
-		}
-	</style>
-{% endblock %}
-
+{% block title %}Login - {{ APP_NAME }}{% endblock %}
 {% block auth_content %}
-	<main class="login-page">
-		<section class="login-panel" aria-labelledby="login-heading">
-			<h1 id="login-heading" class="login-heading">Welcome back</h1>
-			<p class="login-intro">Log in to continue to Sales Tracker.</p>
+<div class="auth-wrapper">
+    <div class="card auth-card shadow-lg">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-graph-up-arrow display-5 text-primary"></i>
+                <h4 class="mt-2 mb-0">{{ APP_NAME }}</h4>
+                <p class="text-muted small">Sign in to your account</p>
+            </div>
 
-			<form method="post" class="login-form" novalidate>
-				{% csrf_token %}
-				{% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2">
+                {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
 
-				{% if form.non_field_errors %}
-					<div class="login-error" role="alert">
-						{{ form.non_field_errors }}
-					</div>
-				{% endif %}
-
-				<div class="login-field">
-					<label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-					{{ form.email }}
-					{% if form.email.errors %}
-						<div class="login-error" role="alert">{{ form.email.errors }}</div>
-					{% endif %}
-				</div>
-
-				<div class="login-field">
-					<label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
-					{{ form.password }}
-					{% if form.password.errors %}
-						<div class="login-error" role="alert">{{ form.password.errors }}</div>
-					{% endif %}
-				</div>
-
-				<button type="submit" class="login-submit">Log in</button>
-			</form>
-		</section>
-	</main>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Email</label>
+                    {{ form.username }}
+                    {% for error in form.username.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                    {{ form.password }}
+                    {% for error in form.password.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="btn btn-primary w-100" data-loading-text="Signing in...">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </form>
+            <p class="text-center text-muted small mt-4 mb-0">
+                Need an account or forgot your password? Contact your administrator.
+            </p>
+        </div>
+    </div>
+</div>
 {% endblock %}

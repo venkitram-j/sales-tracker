@@ -1,0 +1,12 @@
+<nav class="navbar navbar-expand app-topbar px-3">
+    <button class="btn btn-link text-white d-lg-none me-2" type="button" id="sidebarToggle" aria-label="Toggle sidebar">
+        <i class="bi bi-list fs-4"></i>
+    </button>
+    <a class="navbar-brand fw-semibold" href="{% url 'dashboard:home' %}">
+        <i class="bi bi-graph-up-arrow me-2"></i>{{ APP_NAME }}
+    </a>
+    <div class="ms-auto d-flex align-items-center text-white">
+        <i class="bi bi-person-circle fs-5 me-2"></i>
+        <span>{{ user.full_name|default:user.email }}</span>
+    </div>
+</nav>

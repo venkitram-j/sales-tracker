@@ -1,7 +1,10 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
-@login_required
-def dashboard(request):
-	return render(request, "dashboard/dashboard.html")
+class DashboardView(LoginRequiredMixin, TemplateView):
+    """Landing page"""
+
+    template_name = "dashboard/dashboard.html"
+    login_url = reverse_lazy("accounts:login")

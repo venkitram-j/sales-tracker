@@ -1,0 +1,19 @@
+{% load static %}
+<aside class="app-sidebar" id="appSidebar">
+    <nav class="nav flex-column p-3 sidebar-scroll">
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}"
+           href="{% url 'dashboard:home' %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+
+    </nav>
+
+    <div class="sidebar-footer p-3">
+        <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link sidebar-link w-100 text-start border-0 bg-transparent">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </form>
+    </div>
+</aside>
