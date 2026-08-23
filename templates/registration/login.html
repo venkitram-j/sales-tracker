@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<div class="login-page">
+	<div class="login-shell">
+		<section class="login-intro" aria-labelledby="welcome-heading">
+			<div class="login-mark" aria-hidden="true">ST</div>
+			<div>
+				<h1 id="welcome-heading">Welcome back.</h1>
+				<p>Sign in to continue.</p>
+			</div>
+		</section>
+
+		<section class="login-form" aria-labelledby="login-heading">
+		<h2 id="login-heading">Sign in</h2>
+		<p class="login-subtitle">Use your account email and password.</p>
+		<form method="post">
+			{% csrf_token %}
+
+			{% for hidden_field in form.hidden_fields %}
+				{{ hidden_field }}
+				{% for error in hidden_field.errors %}
+					<div class="alert alert-danger" role="alert">{{ error }}</div>
+				{% endfor %}
+			{% endfor %}
+			{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+			{% if form.non_field_errors %}
+				<div class="alert alert-danger" role="alert">
+					{% for error in form.non_field_errors %}
+						<div>{{ error }}</div>
+					{% endfor %}
+				</div>
+			{% endif %}
+
+			{% for field in form.visible_fields %}
+				<div class="mb-3">
+					{{ field.label_tag }}
+					{{ field }}
+					{% for error in field.errors %}
+						<div class="invalid-feedback d-block">{{ error }}</div>
+					{% endfor %}
+				</div>
+			{% endfor %}
+
+			<button type="submit" class="btn btn-primary" data-login-submit>
+				<span data-login-label>Login</span>
+				<span class="spinner-border spinner-border-sm d-none" aria-hidden="true" data-login-spinner></span>
+				<span class="visually-hidden" data-login-status aria-live="polite"></span>
+			</button>
+		</form>
+		</section>
+	</div>
+</div>
+{% endblock %}
