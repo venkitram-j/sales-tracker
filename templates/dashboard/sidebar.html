@@ -1,0 +1,7 @@
+<aside class="dashboard-sidebar" data-sidebar aria-label="Primary navigation">
+	<a class="dashboard-sidebar-brand" href="{% url 'dashboard:home' %}">Django <span>Project</span></a>
+	<nav class="dashboard-sidebar-nav">
+		<a class="dashboard-sidebar-link{% if request.resolver_match.app_name == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard:home' %}" title="Dashboard"><i class="bi bi-speedometer2 dashboard-sidebar-icon" aria-hidden="true"></i><span>Dashboard</span></a>
+		<a class="dashboard-sidebar-link{% if request.resolver_match.url_name == 'users' %} is-active{% endif %}" href="{% url 'accounts:users' %}" title="Manage Users"><i class="bi bi-people dashboard-sidebar-icon" aria-hidden="true"></i><span>Manage Users</span></a>
+	</nav>
+</aside>

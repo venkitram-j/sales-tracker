@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+			<main class="container dashboard-main">
+				<p class="dashboard-eyebrow">Administration</p>
+				<h1 class="dashboard-heading">Edit user</h1>
+				<section class="dashboard-panel dashboard-form-panel">
+					<form method="post" class="p-4">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Save changes</button></form>
+				</section>
+			</main>
+</div>
+{% endblock %}

@@ -36,6 +36,17 @@ class UserChangeForm(forms.ModelForm):
 		fields = ('email', 'full_name', 'password', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
 
 
+class StaffUserChangeForm(UserChangeForm):
+	class Meta(UserChangeForm.Meta):
+		fields = ('email', 'full_name', 'password', 'is_active', 'is_staff')
+
+
+class UserModalChangeForm(forms.ModelForm):
+	class Meta:
+		model = User
+		fields = ('email', 'full_name', 'is_staff')
+
+
 class LoginForm(AuthenticationForm):
 	username = forms.EmailField(
 		label='Email',

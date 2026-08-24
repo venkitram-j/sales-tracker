@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load render_table from django_tables2 %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+			<main class="container dashboard-main">
+				<p class="dashboard-eyebrow">Administration</p>
+				<h1 class="dashboard-heading">Manage users</h1>
+				<p class="dashboard-lead">View the people connected to your workspace.</p>
+				<section class="dashboard-panel" aria-labelledby="users-heading">
+					<div class="dashboard-panel-header"><h2 id="users-heading">User directory</h2></div>
+					<div class="table-responsive">{% render_table table %}</div>
+				</section>
+			</main>
+			<div class="modal fade" id="edit-user-modal" tabindex="-1" aria-labelledby="edit-user-modal-label" aria-hidden="true">
+				<div class="modal-dialog"><div class="modal-content">
+					<form id="edit-user-form" data-edit-url-template="{% url 'accounts:user_edit' user_id=0 %}">
+						<div class="modal-header"><h2 class="modal-title fs-5" id="edit-user-modal-label">Edit user</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+						<div class="modal-body">
+							<div class="alert alert-danger d-none" data-edit-error role="alert"></div>
+							<div class="mb-3"><label class="form-label" for="edit-user-email">Email</label><input class="form-control" id="edit-user-email" name="email" type="email" required><div class="invalid-feedback" data-error-for="email"></div></div>
+							<div class="mb-3"><label class="form-label" for="edit-user-full-name">Full name</label><input class="form-control" id="edit-user-full-name" name="full_name" required><div class="invalid-feedback" data-error-for="full_name"></div></div>
+							<div class="form-check"><input class="form-check-input" id="edit-user-is-staff" name="is_staff" type="checkbox"><label class="form-check-label" for="edit-user-is-staff">Staff user</label></div>
+						</div>
+						<div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" data-edit-submit>Confirm</button></div>
+					</form>
+				</div></div>
+			</div>
+</div>
+{% endblock %}

@@ -4,27 +4,6 @@
 
 {% block content %}
 <div class="dashboard-page">
-	<nav class="navbar navbar-expand-lg dashboard-topbar">
-		<div class="container">
-			<a class="navbar-brand fw-semibold" href="{% url 'dashboard:home' %}">Django <span>Project</span></a>
-			<div class="dropdown">
-				<button class="btn dashboard-user-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-					{{ request.user.full_name|default:request.user.email }}
-				</button>
-				<ul class="dropdown-menu dropdown-menu-end">
-					<li><span class="dropdown-item-text">{{ request.user.email }}</span></li>
-					<li><hr class="dropdown-divider"></li>
-					<li>
-						<form method="post" action="{% url 'accounts:logout' %}">
-							{% csrf_token %}
-							<button type="submit" class="dropdown-item">Logout</button>
-						</form>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</nav>
-
 	<main class="container dashboard-main">
 		<p class="dashboard-eyebrow">Overview</p>
 		<h1 class="dashboard-heading">Good to see you, {{ request.user.full_name|default:'there' }}.</h1>
