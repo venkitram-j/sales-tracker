@@ -15,10 +15,10 @@ import re
 import unicodedata
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
 
-from apps.accounts.models import User
+User = get_user_model()
 
 DEFAULT_DEV_PASSWORD = "DevPass123!"
 
@@ -72,6 +72,9 @@ class Command(BaseCommand):
             full_name = full_name.strip()
             if not full_name:
                 continue
+            parts = full_name.split(maxsplit=1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else ""
 
             email = email_from_full_name(full_name, domain)
             if not email:
@@ -79,14 +82,14 @@ class Command(BaseCommand):
                 skipped += 1
                 continue
 
-            if User.objects.filter(Q(email__iexact=email) | Q(full_name__iexact=full_name)).exists():
-                self.stdout.write(self.style.WARNING(
-                    f"Skipped '{full_name}': a user with email {email} or full name {full_name} already exists."))
+            if User.objects.filter(email__iexact=email).exists():
+                self.stdout.write(self.style.WARNING(f"Skipped '{full_name}': a user with email {email} already exists."))
                 skipped += 1
                 continue
 
             User.objects.create_user(
-                email=email, password=password, full_name=full_name,
+                username=email, email=email, password=password,
+                first_name=first_name, last_name=last_name,
                 is_staff=is_staff, is_superuser=is_superuser,
             )
             self.stdout.write(self.style.SUCCESS(f"Created {full_name} <{email}>"))

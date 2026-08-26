@@ -1,67 +1,44 @@
+"""
+User forms
+"""
+
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, ReadOnlyPasswordHashField
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
 
-from .models import User
-
-
-class UserCreationForm(forms.ModelForm):
-	password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
-	password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
-
-	class Meta:
-		model = User
-		fields = ('email', 'full_name', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
-
-	def clean_password2(self):
-		password1 = self.cleaned_data.get('password1')
-		password2 = self.cleaned_data.get('password2')
-		if password1 and password1 != password2:
-			raise forms.ValidationError('The two password fields did not match.')
-		return password2
-
-	def save(self, commit=True):
-		user = super().save(commit=False)
-		user.set_password(self.cleaned_data['password1'])
-		if commit:
-			user.save()
-			self.save_m2m()
-		return user
+User = get_user_model()
 
 
-class UserChangeForm(forms.ModelForm):
-	password = ReadOnlyPasswordHashField(label='Password')
+class EmailAuthenticationForm(AuthenticationForm):
+    """
+    Login form that collects an email + password instead of username.
+    """
 
-	class Meta:
-		model = User
-		fields = ('email', 'full_name', 'password', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+    username = forms.EmailField(
+        label="Email",
+        widget=forms.EmailInput(attrs={"class": "form-control", "autofocus": True, "placeholder": "you@example.com"}),
+    )
+    password = forms.CharField(
+        label="Password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Password"}),
+    )
 
+    error_messages = {
+        "invalid_login": "Please enter a correct email and password. Both fields are case-sensitive for the password.",
+        "inactive": "This account is inactive. Please contact your administrator.",
+    }
 
-class StaffUserChangeForm(UserChangeForm):
-	class Meta(UserChangeForm.Meta):
-		fields = ('email', 'full_name', 'password', 'is_active', 'is_staff')
+    def clean(self):
+        email = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+        if email and password:
+            self.user_cache = self.get_user_or_none(email, password)
+            if self.user_cache is None:
+                raise forms.ValidationError(self.error_messages["invalid_login"], code="invalid_login")
+            self.confirm_login_allowed(self.user_cache)
+        return self.cleaned_data
 
-
-class UserModalChangeForm(forms.ModelForm):
-	class Meta:
-		model = User
-		fields = ('email', 'full_name', 'is_staff')
-
-
-class LoginForm(AuthenticationForm):
-	username = forms.EmailField(
-		label='Email',
-		widget=forms.EmailInput(attrs={
-			'class': 'form-control',
-			'placeholder': 'Email address',
-			'autocomplete': 'email',
-		}),
-	)
-	password = forms.CharField(
-		label='Password',
-		strip=False,
-		widget=forms.PasswordInput(attrs={
-			'class': 'form-control',
-			'placeholder': 'Password',
-			'autocomplete': 'current-password',
-		}),
-	)
+    def get_user_or_none(self, email, password):
+        return authenticate(self.request, username=email, password=password)

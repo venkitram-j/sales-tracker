@@ -1,10 +1,13 @@
+"""
+Dashboard URLs
+"""
+
 from django.urls import path
 
-from .views import home
+from . import views
 
-
-app_name = 'dashboard'
+app_name = "dashboard"
 
 urlpatterns = [
-	path('', home, name='home'),
+    path("", views.DashboardView.as_view(), name="home"),
 ]

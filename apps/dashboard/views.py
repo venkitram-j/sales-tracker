@@ -1,7 +1,17 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+"""
+Dashboard views
+"""
+
+import logging
+
+from django.views.generic import TemplateView
+
+from apps.core.mixins import AppLoginRequiredMixin
+
+logger = logging.getLogger("apps.dashboard")
 
 
-@login_required
-def home(request):
-	return render(request, 'dashboard/home.html')
+class DashboardView(AppLoginRequiredMixin, TemplateView):
+    """Landing page."""
+
+    template_name = "dashboard/dashboard.html"
