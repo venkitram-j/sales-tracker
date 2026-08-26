@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 echo "==> Creating virtual environment (.venv/)"
 python3 -m venv .venv
 # shellcheck disable=SC1091
-source venv/bin/activate
+source .venv/bin/activate
 
 echo "==> Installing dependencies"
 pip install --upgrade pip
