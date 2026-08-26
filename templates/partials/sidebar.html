@@ -1,0 +1,66 @@
+{% load static %}
+<aside class="app-sidebar" id="appSidebar">
+    <nav class="nav flex-column p-3 sidebar-scroll">
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}"
+           href="{% url 'dashboard:home' %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+
+        {% if perms.products.view_product %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'products' %}active{% endif %}"
+           href="{% url 'products:list' %}">
+            <i class="bi bi-box-seam"></i> Products
+        </a>
+        {% endif %}
+
+        {% if perms.branches.view_branch %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.namespace == 'branches' %}active{% endif %}"
+           href="{% url 'branches:list' %}">
+            <i class="bi bi-shop"></i> Branches
+        </a>
+        {% endif %}
+
+        {% if perms.sales_data.view_salesdata %}
+        <a class="nav-link sidebar-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'sales_data' %}active{% endif %}"
+           href="{% url 'sales_data:list' %}">
+            <i class="bi bi-receipt"></i> Sales Data
+        </a>
+        <a class="nav-link sidebar-link ps-4 small {% if request.resolver_match.url_name == 'branch_wise' %}active{% endif %}"
+           href="{% url 'sales_data:branch_wise' %}">
+            <i class="bi bi-diagram-3"></i> Branch-wise Report
+        </a>
+        {% endif %}
+
+        {% if perms.accounts.view_user %}
+        <hr class="text-white-50">
+        <a class="nav-link sidebar-link d-flex justify-content-between align-items-center" href="#manageUsersMenu"
+           data-bs-toggle="collapse" role="button"
+           aria-expanded="{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'logout' %}true{% else %}false{% endif %}"
+           aria-controls="manageUsersMenu">
+            <span><i class="bi bi-people"></i> Manage Users</span>
+            <i class="bi bi-chevron-down small"></i>
+        </a>
+        <div class="collapse {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'logout' %}show{% endif %}" id="manageUsersMenu">
+            {% if perms.accounts.add_user %}
+            <a class="nav-link sidebar-link ps-4 small {% if request.resolver_match.url_name == 'user_add' %}active{% endif %}"
+               href="{% url 'accounts:user_add' %}">
+                <i class="bi bi-person-plus"></i> Add New User
+            </a>
+            {% endif %}
+            <a class="nav-link sidebar-link ps-4 small {% if request.resolver_match.url_name == 'user_list' or request.resolver_match.url_name == 'user_password_reset' %}active{% endif %}"
+               href="{% url 'accounts:user_list' %}">
+                <i class="bi bi-key"></i> Reset Password
+            </a>
+        </div>
+        {% endif %}
+    </nav>
+
+    <div class="sidebar-footer p-3">
+        <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link sidebar-link w-100 text-start border-0 bg-transparent">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </form>
+    </div>
+</aside>
