@@ -1,3 +1,7 @@
+"""
+Application middlewares
+"""
+
 import logging
 import time
 
@@ -5,10 +9,8 @@ logger = logging.getLogger("apps.core.request")
 
 
 class RequestLoggingMiddleware:
-    """Logs method, path, status code and duration for every request.
-
-    Kept intentionally lightweight so it has negligible overhead under
-    high traffic; heavier diagnostics should use APM tooling instead.
+    """
+    Logs method, path, status code and duration for every request.
     """
 
     def __init__(self, get_response):

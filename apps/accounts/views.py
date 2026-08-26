@@ -9,6 +9,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 
 from .forms import EmailAuthenticationForm
 
+
 logger = logging.getLogger("apps.accounts")
 User = get_user_model()
 

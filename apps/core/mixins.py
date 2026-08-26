@@ -1,9 +1,9 @@
-import logging
+"""
+Application mixins
+"""
 
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
-
-logger = logging.getLogger("apps.core.mixins")
 
 
 class AppLoginRequiredMixin(LoginRequiredMixin):

@@ -13,23 +13,21 @@
 </head>
 <body>
 {% if user.is_authenticated %}
-    <div id="global-loading-overlay" aria-hidden="true">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <!-- <div class="data-loading-overlay" role="status" aria-live="polite">
+        <div class="data-loading-card">
+            <div class="spinner-border text-primary mb-3" aria-hidden="true"></div>
+            <div class="fw-semibold">Loading data</div>
+            <div class="small text-secondary mt-1">Please wait...</div>
+        </div>
+    </div> -->
+    <div class="app-shell">
+        {% include "dashboard/sidebar.html" %}
+        <div class="main">
+            {% include "dashboard/topbar.html" %}
+            {% block content %}{% endblock %}
         </div>
     </div>
-    {% include "partials/topbar.html" %}
-    <div class="app-shell">
-        {% include "partials/sidebar.html" %}
-        <main class="app-content">
-            <div class="container-fluid py-4">
-                {% include "partials/messages.html" %}
-                {% block content %}{% endblock %}
-            </div>
-        </main>
-    </div>
 {% else %}
-    {% include "partials/messages.html" %}
     {% block auth_content %}{% endblock %}
 {% endif %}
 

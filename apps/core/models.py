@@ -1,3 +1,7 @@
+"""
+Application core models
+"""
+
 from django.db import models
 
 

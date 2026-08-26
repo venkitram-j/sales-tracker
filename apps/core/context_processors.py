@@ -1,3 +1,7 @@
+"""
+Application context processors
+"""
+
 from django.conf import settings
 
 
