@@ -3,90 +3,11 @@
 {% block title %}Dashboard - {{ APP_NAME }}{% endblock%}
 
 {% block content %}
-<main class="page">
-  <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
-    <div>
-      <h1 class="page-title">Good evening, Venkitram 👋</h1>
-      <div class="page-subtitle">
-        Here’s what’s happening across your sales operation today.
-      </div>
-    </div>
-    <a class="btn btn-primary" href="product-create.html"><i class="bi bi-plus-lg me-1"></i>Add Product</a>
-  </div>
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-xl-3">
-      <div class="card stat-card">
-        <div class="text-secondary small mb-2">Total Sales</div>
-        <div class="metric">₹12.84L</div>
-        <div class="small text-success mt-2">↑ 12.8% vs last month</div>
-      </div>
-    </div>
-    <div class="col-6 col-xl-3">
-      <div class="card stat-card">
-        <div class="text-secondary small mb-2">Orders</div>
-        <div class="metric">1,284</div>
-        <div class="small text-success mt-2">↑ 8.4% vs last month</div>
-      </div>
-    </div>
-    <div class="col-6 col-xl-3">
-      <div class="card stat-card">
-        <div class="text-secondary small mb-2">Stores</div>
-        <div class="metric">48</div>
-        <div class="small text-secondary mt-2">3 added this month</div>
-      </div>
-    </div>
-    <div class="col-6 col-xl-3">
-      <div class="card stat-card">
-        <div class="text-secondary small mb-2">Products</div>
-        <div class="metric">326</div>
-        <div class="small text-secondary mt-2">18 low stock</div>
-      </div>
-    </div>
-  </div>
-  <div class="row g-3">
-    <div class="col-xl-8">
-      <div class="card p-3 p-md-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <h5 class="mb-1">Sales performance</h5>
-            <div class="small text-secondary">
-              Revenue over the last 30 days
-            </div>
-          </div>
-          <select class="form-select form-select-sm dashboard-period-select">
-            <option>Last 30 days</option>
-            <option>Last 7 days</option>
-          </select>
-        </div>
-        <div class="chart-placeholder">
-          <div class="text-center">
-            <i class="bi bi-bar-chart-line fs-2 d-block mb-2"></i>Chart
-            component placeholder
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-xl-4">
-      <div class="card p-3 p-md-4 h-100">
-        <h5 class="mb-3">Top products</h5>
-        <div class="d-flex align-items-center gap-3 py-2">
-          <div class="avatar rounded-3">A</div>
-          <div class="flex-grow-1">
-            <div class="fw-semibold small">Aurora Wireless</div>
-            <div class="small text-secondary">184 units</div>
-          </div>
-          <span class="fw-semibold small">₹2.4L</span>
-        </div>
-        <div class="d-flex align-items-center gap-3 py-2">
-          <div class="avatar rounded-3">S</div>
-          <div class="flex-grow-1">
-            <div class="fw-semibold small">SmartHub Mini</div>
-            <div class="small text-secondary">152 units</div>
-          </div>
-          <span class="fw-semibold small">₹1.8L</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</main>
+<p>Welcome {{ request.user.full_name }}</p>
+<form method="post" action="{% url 'accounts:logout' %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">
+      <i class="bi bi-box-arrow-right"></i> Logout
+  </button>
+</form>
 {% endblock %}
