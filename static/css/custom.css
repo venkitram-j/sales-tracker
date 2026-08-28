@@ -1,0 +1,17 @@
+.login-card {
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-page-error {
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: transparent;
+  background: transparent;
+}
