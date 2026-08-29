@@ -3,53 +3,39 @@
 {% block title %}Login - {{ APP_NAME }}{% endblock %}
 
 {% block auth_content %}
-<div class="d-flex align-items-center py-4 bg-body-tertiary">
-  <div class="form-signin w-100 m-auto">
-    <div class="text-center mb-4">
-      <i class="bi bi-graph-up-arrow display-5 text-primary"></i>
-      <h4 class="mt-2 mb-0">{{ APP_NAME }}</h4>
-      <p class="text-muted small">Sign in to your account</p>
-    </div>
-    <form method="post" action="{% url 'accounts:login' %}">
-      {% csrf_token %}
-
-      <div class="form-floating">
-        <input
-          type="email"
-          name="username"
-          class="form-control"
-          id="floatingInput"
-          placeholder="name@example.com"
-          required/>
-        <label for="floatingInput">Email address</label>
-      </div>
-      
-      <div class="form-floating">
-        <input
-          type="password"
-          name="password"
-          class="form-control"
-          id="floatingPassword"
-          placeholder="Password"
-          required/>
-        <label for="floatingPassword">Password</label>
-      </div>
-      
-      {% if form.non_field_errors %}
-        <div class="login-page-error small mt-1 mb-2 text-danger">
-          {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
-        </div>
-      {% endif %}
-
-      <button class="btn btn-primary w-100 py-2 mt-3" type="submit" data-loading-text="Signing in...">
-        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-      </button>
-      <p class="text-center text-muted small mt-4">
-        Need an account or forgot your password? Contact your administrator.
-      </p>
-    </form>
+<main class="form-signin w-100 m-auto">
+  <div class="mb-4">
+    <i class="bi bi-graph-up-arrow display-5 text-primary"></i>
   </div>
-</div>
+  <h1 class="h3 mb-3 fw-normal">Sign in to your account</h1>
+  <form method="post" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+
+    <div class="form-floating">
+      <input type="email" name="username" class="form-control" id="floatingInput" placeholder="name@example.com"
+        required />
+      <label for="floatingInput">Email address</label>
+    </div>
+
+    <div class="form-floating">
+      <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password"
+        required />
+      <label for="floatingPassword">Password</label>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="login-page-error small mt-1 mb-2 text-danger">
+      {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <button class="btn btn-primary w-100 py-2 mt-3" type="submit" data-loading-text="Signing in...">
+      <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+    </button>
+    <p class="text-center text-muted small mt-4">
+      Need an account or forgot your password? Contact your administrator.
+    </p>
+</main>
 {% endblock %}
 
 {% block extra_js %}
