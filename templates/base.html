@@ -14,10 +14,10 @@
 
   <body>
     {% if user.is_authenticated %}
-    <div class="app=shell">
-      {% include "dashboard/sidebar.html" %}
-      <div class="main">
-        {% include "dashboard/topbar.html" %}
+    {% include "dashboard/topbar.html" %}
+    <div class="container-fluid">
+      <div class="row">
+        {% include "dashboard/sidebar.html" %}
         {% block content %}{% endblock %}
       </div>
     </div>
