@@ -12,17 +12,13 @@
     {% block extra_css %}{% endblock %}
   </head>
 
-  <body class="{% if user.is_authenticated %}{% else %}d-flex align-items-center py-4 bg-body-tertiary{% endif %}">
+  <body>
     {% if user.is_authenticated %}
-    {% include "dashboard/topbar.html" %}
-    <div class="container-fluid">
-      <div class="row">
-        {% include "dashboard/sidebar.html" %}
-        {% block content %}{% endblock %}
-      </div>
-    </div>
+      {% include "dashboard/topbar.html" %}
+      {% include "dashboard/sidebar.html" %}
+      {% block content %}{% endblock %}
     {% else %}
-    {% block auth_content %}{% endblock %}
+      {% block auth_content %}{% endblock %}
     {% endif %}
 
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
