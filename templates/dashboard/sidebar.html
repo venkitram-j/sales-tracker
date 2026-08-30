@@ -1,60 +1,41 @@
-<div class="sidebar border border-right col-md-3 col-lg-2 p-0 bg-body-tertiary">
-  <div class="offcanvas-md offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu"
-    aria-labelledby="sidebarMenuLabel">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title" id="sidebarMenuLabel">{{ APP_NAME }}</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"
-        aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2 active" href="{% url 'dashboard:home' %}"
-            {% if request.resolver_match.namespace == 'dashboard' %}aria-current="page"{% endif %}>
-            <i class="bi bi-grid-1x2"></i>
-            Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="#"
-            {% if request.resolver_match.namespace == 'accounts' %}aria-current="page"{% endif %}>
-            <i class="bi bi-people"></i>
-            Manage Users
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="#"
-            {% if request.resolver_match.namespace == 'branches' %}aria-current="page"{% endif %}>
-            <i class="bi bi-shop"></i>
-            Branches
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="#"
-            {% if request.resolver_match.namespace == 'products' %}aria-current="page"{% endif %}>
-            <i class="bi bi-box-seam"></i>
-            Products
-          </a>
-        </li>
-      </ul>
-      <hr class="my-3" />
-      <ul class="nav flex-column mb-auto">
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="#">
-            <i class="bi bi-person-circle"></i>
-            My Profile
-          </a>
-        </li>
-        <li class="nav-item">
-          <form method="post" action="{% url 'accounts:logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="nav-link d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start">
-              <i class="bi bi-box-arrow-right"></i>
-              Sign out
-            </button>
-          </form>
-        </li>
-      </ul>
-    </div>
+<aside id="mobileSidebar" class="app-sidebar offcanvas-lg offcanvas-start border-end bg-body" tabindex="-1"
+  aria-labelledby="sidebarLabel">
+  <div class="offcanvas-header border-bottom d-lg-none">
+    <span id="sidebarLabel" class="fw-bold">{{ APP_NAME }}</span>
+    <button class="btn-close"
+      data-bs-target="#mobileSidebar" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
-</div>
+  <div class="offcanvas-body d-flex flex-column p-3 p-lg-4">
+    <a href="{% url 'dashboard:home' %}" 
+      class="d-flex align-items-center gap-2 text-decoration-none text-body mb-4">
+      <span class="rounded-3 bg-primary text-white d-inline-flex align-items-center justify-content-center"
+        style="width:40px;height:40px">
+        <i class="bi bi-graph-up-arrow"></i>
+      </span>
+      <span class="fw-bold fs-5">{{ APP_NAME }}</span>
+    </a>
+    <div class="text-uppercase small fw-semibold text-body-secondary mb-2">Workspace</div>
+    <nav class="nav flex-column gap-1">
+      <a href="{% url 'dashboard:home' %}"
+        class="nav-link rounded-3 text-body 
+          {% if active_nav == '' %}active bg-primary-subtle text-primary{% endif %}">
+        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+      </a>
+      <a href="#"
+        class="nav-link rounded-3 text-body
+          {% if active_nav == 'users' %}active bg-primary-subtle text-primary{% endif %}">
+        <i class="bi bi-people me-2"></i>Users
+      </a>
+      <a href="#"
+        class="nav-link rounded-3 text-body
+          {% if active_nav == 'stores' %}active bg-primary-subtle text-primary{% endif %}">
+        <i class="bi bi-shop me-2"></i>Stores
+      </a>
+      <a href="#"
+        class="nav-link rounded-3 text-body
+          {% if active_nav == 'products' %}active bg-primary-subtle text-primary{% endif %}">
+        <i class="bi bi-box-seam me-2"></i>Products
+      </a>
+    </nav>
+  </div>
+</aside>

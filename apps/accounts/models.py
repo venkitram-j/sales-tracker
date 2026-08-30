@@ -16,3 +16,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.full_name or self.email
+
+    def user_initials(self):
+        return f"{self.first_name[0]}{self.last_name[0]}".upper()

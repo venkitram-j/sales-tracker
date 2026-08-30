@@ -3,15 +3,114 @@
 {% block title %}Dashboard - {{ APP_NAME }}{% endblock%}
 
 {% block content %}
-<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam mollis finibus orci, in pretium nunc tempor quis. Pellentesque consequat elementum turpis. In lobortis sollicitudin nibh, sit amet ullamcorper nisi porta nec. Nulla pretium luctus diam at pharetra. Suspendisse ut elit malesuada est semper suscipit rhoncus elementum dui. Suspendisse venenatis varius sem consectetur facilisis. Etiam condimentum nisl libero, vitae feugiat justo commodo vel. Proin mollis scelerisque urna, sit amet consequat lorem. Vivamus eros mauris, cursus a dolor sed, pellentesque sollicitudin felis. Sed mi mauris, efficitur id consequat a, ultrices et nibh. In venenatis condimentum venenatis.
-
-  Nullam non enim consequat, interdum neque sed, consequat tortor. In mattis tellus ut augue semper sodales. Vivamus sodales ut mi eget porttitor. Nullam ultricies eros in vulputate suscipit. Phasellus nisi tortor, fringilla quis libero eget, vestibulum tristique eros. Mauris vel neque aliquet, porttitor elit sed, aliquet libero. Aliquam varius rhoncus iaculis. Etiam luctus ullamcorper metus. Sed a libero turpis. Etiam semper sem libero, id suscipit turpis placerat nec. Nam viverra tellus purus, ac mattis justo fermentum nec. Phasellus fringilla semper finibus.
-
-  Suspendisse tortor tellus, fringilla a semper eu, aliquet sit amet ligula. Sed nec gravida massa, at sodales mauris. Aenean elit augue, tristique at lectus sed, eleifend ultrices nulla. Vivamus egestas egestas sodales. In condimentum risus in sagittis elementum. Phasellus dignissim pulvinar viverra. Suspendisse aliquam, arcu sit amet mollis porta, est dui posuere mi, et lacinia urna erat sit amet urna. Maecenas lacinia quam vitae dolor porta lobortis. Mauris eu facilisis est. Fusce efficitur nulla libero, eget pharetra turpis consequat eu. Pellentesque et arcu id orci aliquet faucibus. Integer a justo sed nisl aliquet dignissim. Quisque suscipit nunc nibh, et viverra tellus aliquet in. Morbi hendrerit pharetra arcu id vulputate. Fusce augue turpis, ullamcorper sed luctus quis, suscipit at neque. Phasellus in eros nec urna scelerisque gravida.
-
-  Quisque ultricies enim at urna ultricies efficitur. Nam ut ultrices est, sodales convallis velit. Sed eget lacus velit. Suspendisse ultricies rutrum ullamcorper. Aliquam mauris neque, ultrices ac augue semper, efficitur lobortis magna. Etiam mollis feugiat mi, sit amet fringilla sem cursus et. In volutpat, enim eget lacinia hendrerit, justo massa volutpat justo, et tincidunt quam orci sed odio. Duis porttitor, lacus condimentum porta lacinia, turpis lectus dignissim massa, in bibendum mi erat id sem. Pellentesque consectetur, lacus quis tristique auctor, turpis ante tristique eros, sed congue mauris nunc dapibus ipsum.
-
-  Proin consequat iaculis ante, at aliquet odio accumsan at. Suspendisse suscipit lacus quis leo ultricies, ac volutpat metus pretium. In ultrices sem a luctus vehicula. Aenean sit amet bibendum felis. Donec auctor sollicitudin leo, a luctus mi pretium id. Sed elementum tristique quam elementum cursus. Nunc fringilla lorem in ex volutpat auctor. Aliquam blandit pharetra neque a imperdiet. Ut ac facilisis ex. Maecenas finibus gravida turpis tempor elementum. Proin vel odio a turpis euismod molestie non gravida ex. Donec quis convallis ligula. Nunc varius eros bibendum sapien auctor, ultricies aliquam ligula accumsan. In aliquam imperdiet enim eget mollis. Phasellus id lacinia erat.
-</main>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+  <div>
+    <div class="text-uppercase small fw-semibold text-primary mb-1">Overview</div>
+    <h1 class="h3 mb-1">Good morning, {{ user.first_name|default:'there' }}</h1>
+    <p class="text-body-secondary mb-0">Here's a concise view of your sales operations.</p>
+  </div>
+  <a href="#" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Add product</a>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body p-4">
+        <div class="text-body-secondary small">Total sales</div>
+        <div class="display-6 fw-semibold">₹12.84L</div>
+        <div class="small text-success mt-2"><i class="bi bi-arrow-up"></i> 12.8% this month</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body p-4">
+        <div class="text-body-secondary small">Orders</div>
+        <div class="display-6 fw-semibold">1,284</div>
+        <div class="small text-success mt-2"><i class="bi bi-arrow-up"></i> 8.2% this month</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body p-4">
+        <div class="text-body-secondary small">Stores</div>
+        <div class="display-6 fw-semibold">48</div>
+        <div class="small text-body-secondary mt-2">4 added this month</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body p-4">
+        <div class="text-body-secondary small">Products</div>
+        <div class="display-6 fw-semibold">326</div>
+        <div class="small text-body-secondary mt-2">18 low-stock items</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-12 col-xl-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-body border-0 pt-4 px-4">
+        <h2 class="h5 mb-1">Recent activity</h2>
+        <p class="small text-body-secondary mb-0">Latest workspace changes.</p>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="ps-4">Activity</th>
+              <th>User</th>
+              <th>When</th>
+              <th class="pe-4 text-end">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="ps-4">
+                <div class="fw-semibold">New product added</div>
+                <div class="small text-body-secondary">SKU ST-2048</div>
+              </td>
+              <td>Arun K.</td>
+              <td>8 min ago</td>
+              <td class="pe-4 text-end"><span class="badge text-bg-success">Completed</span></td>
+            </tr>
+            <tr>
+              <td class="ps-4">
+                <div class="fw-semibold">Store updated</div>
+                <div class="small text-body-secondary">Kochi Central</div>
+              </td>
+              <td>Meera P.</td>
+              <td>24 min ago</td>
+              <td class="pe-4 text-end"><span class="badge text-bg-success">Completed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-body border-0 pt-4 px-4">
+        <h2 class="h5 mb-1">Stock alerts</h2>
+        <p class="small text-body-secondary mb-0">Items needing attention.</p>
+      </div>
+      <div class="card-body px-4">
+        <div class="d-flex justify-content-between py-3 border-bottom">
+          <span>Wireless Mouse</span>
+          <span class="badge text-bg-danger">3 left</span>
+        </div>
+        <div class="d-flex justify-content-between py-3 border-bottom">
+          <span>USB-C Hub</span>
+          <span class="badge text-bg-warning">7 left</span>
+        </div>
+        <div class="d-flex justify-content-between py-3">
+          <span>Keyboard Pro</span>
+          <span class="badge text-bg-warning">9 left</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
