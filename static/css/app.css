@@ -1,0 +1,11 @@
+/* Sales Tracker: the only custom CSS is the desktop sticky sidebar shell. Everything else uses Bootstrap 5.3.8. */
+@media (min-width: 992px) {
+  .app-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    min-width: 280px;
+    overflow-y: auto;
+  }
+}
